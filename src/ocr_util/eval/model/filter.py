@@ -1,9 +1,9 @@
 """filter module"""
 
 import re
+import typing
+
 from pathlib import Path
-from typing import Match, Optional, Dict
-from typing import NamedTuple, List
 
 from shapely import Polygon
 from shapely.geometry import Point
@@ -14,11 +14,11 @@ import ocr_util.eval.model.digital_object_util as mdou
 
 
 
-class PolygonFrameFilterReport(NamedTuple):
+class PolygonFrameFilterReport(typing.NamedTuple):
     """report container for structual manipulations"""
 
-    removed_elements: Dict[str, int] = {}
-    resized_elements: Dict[str, int] = {}
+    removed_elements: typing.Dict[str, int] = {}
+    resized_elements: typing.Dict[str, int] = {}
 
 
 class PolygonFrameFilterUtil:
@@ -28,10 +28,15 @@ class PolygonFrameFilterUtil:
 
     @staticmethod
     def str_to_polygon(points_list: str) -> Polygon:
-        match: Match = re.match(PolygonFrameFilterUtil.POINT_LIST_PATTERN, points_list)
-        points_str: str = match.string
-        point_strs_arr: List[str] = points_str.split(" ")
-        points_arr: List[Point] = list(
+        a_match = re.match(PolygonFrameFilterUtil.POINT_LIST_PATTERN, points_list)
+        if a_match is None:
+            raise ValueError(
+                f"points_list {points_list} does not match expected format: "
+                f"{PolygonFrameFilterUtil.POINT_LIST_PATTERN}"
+            )
+        points_str: str = a_match.string
+        point_strs_arr: typing.List[str] = points_str.split(" ")
+        points_arr: typing.List[Point] = list(
             map(PolygonFrameFilterUtil.__str_to_point, point_strs_arr)
         )
         if len(points_arr) == 2:
@@ -75,7 +80,7 @@ class PolygonFrameFilter:
     def polygon(self) -> Polygon:
         return self.__polygon
 
-    def process(self) -> Optional[mdom.DigitalObjectTree]:
+    def process(self) -> typing.Optional[mdom.DigitalObjectTree]:
         """apply the filter and return resulting structural data"""
         digo_result: mdom.DigitalObjectTree = mmain.to_digital_object(str(self.__ocr_path_in))
         self.__process_digo(digo_result)

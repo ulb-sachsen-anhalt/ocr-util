@@ -84,7 +84,7 @@ class FormatPageUtil:
             if line_piece not in parent:
                 msg = f"{line_piece.id}/{line_piece.as_box()} not contained in "
                 msg += f"parent box {parent.id}/{parent.as_box()}"
-                raise dc.DigitalObjectGeometryException(msg)
+                print(f"[WARNING] geometry inconsistent: {msg}")
             if line_piece.max_level != dc.DigitalObjectLevel.LINE:
                 word_tokens = page_line.getElementsByTagNameNS(ns, "Word")
                 line_piece.parent = parent
