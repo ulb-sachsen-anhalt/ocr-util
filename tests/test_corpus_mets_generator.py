@@ -3,14 +3,8 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-import ocr_util.corpus.MetsGenerator as mets_generator_module
-from ocr_util.corpus.GtResources import GtResource
-from ocr_util.corpus.MetsGenerator import MetsGenerator
-from ocr_util.corpus.common import (
-    GT_METS_FILEGROUP,
-    MetsGeneratorResource,
-    MetsResource,
-)
+import ocr_util.corpus.common as cc
+import ocr_util.corpus.generate_corpus as gc
 
 METS_NS = "{http://www.loc.gov/METS/}"
 
@@ -98,29 +92,27 @@ def _write_source_mets(
 
 def _build_resource(
     out_dir: Path, mets_file: Path, gt_file: Path, page_urn: str
-) -> MetsGeneratorResource:
-    gt = GtResource(
+) -> cc.MetsGeneratorResource:
+    gt = cc.GroundtruthFileResource(
         identifier=page_urn,
         file_base_name=gt_file.stem,
         file_path=gt_file,
         relative_file_path=gt_file.relative_to(out_dir),
         languages=["deu"],
     )
-    mets = MetsResource(identifier_urn=page_urn, file_path=mets_file)
-    return MetsGeneratorResource(gt=gt, mets=mets)
+    mets = cc.MetsResource(identifier_urn=page_urn, file_path=mets_file)
+    return cc.MetsGeneratorResource(gt=gt, mets=mets)
 
 
 def _patch_template_parse_with_struct_link():
-    original_parse = mets_generator_module.etree.parse
+    original_parse = gc.ET.parse
 
     def parse_with_struct_link(source, *args, **kwargs):
         tree = original_parse(source, *args, **kwargs)
         if Path(str(source)).name == "template.corpus.xml":
             struct_link = tree.getroot().find(f".//{METS_NS}structLink")
             if struct_link is None:
-                mets_generator_module.etree.SubElement(
-                    tree.getroot(), f"{METS_NS}structLink"
-                )
+                gc.ET.SubElement(tree.getroot(), f"{METS_NS}structLink")
         return tree
 
     return parse_with_struct_link
@@ -168,12 +160,10 @@ def test_mets_generator_run_generates_output_and_merges_dmd(
         _build_resource(out_dir, mets_2, gt_2, page_urn_2),
     ]
 
-    monkeypatch.setattr(
-        mets_generator_module.etree,
-        "parse",
-        _patch_template_parse_with_struct_link(),
-    )
-    generator = MetsGenerator(
+    monkeypatch.setattr(gc, "cc", cc, raising=False)
+    monkeypatch.setattr(gc.ET, "parse", _patch_template_parse_with_struct_link())
+
+    generator = gc.MetsGenerator(
         out_dir=out_dir,
         generator_resources=resources,
         corpus_label="Test Corpus",
@@ -206,7 +196,7 @@ def test_mets_generator_run_generates_output_and_merges_dmd(
     assert phys_orders == ["1", "2"]
     assert log_orders == ["1", "2"]
 
-    fulltext_group = document.find(f'.//{METS_NS}fileGrp[@USE="{GT_METS_FILEGROUP}"]')
+    fulltext_group = document.find(f'.//{METS_NS}fileGrp[@USE="{cc.GT_METS_FILEGROUP}"]')
     assert fulltext_group is not None
     assert len(fulltext_group.findall(f".//{METS_NS}file")) == 2
 
@@ -237,13 +227,101 @@ def test_mets_generator_raises_for_multiple_mods_blocks(
     )
 
     resources = [_build_resource(out_dir, mets_file, gt_file, page_urn)]
-    monkeypatch.setattr(
-        mets_generator_module.etree,
-        "parse",
-        _patch_template_parse_with_struct_link(),
-    )
-    generator = MetsGenerator(out_dir=out_dir, generator_resources=resources)
+    monkeypatch.setattr(gc, "cc", cc, raising=False)
+    monkeypatch.setattr(gc.ET, "parse", _patch_template_parse_with_struct_link())
+
+    generator = gc.MetsGenerator(out_dir=out_dir, generator_resources=resources)
     with pytest.raises(Exception) as exc:
         generator.run()
 
     assert "more than one MODS block" in str(exc.value)
+
+
+def _write_source_mets_multivolume(
+    file_path: Path, *, page_urn: str, phys_id: str, log_id: str, dmd_id: str
+) -> None:
+    """Write a source METS with host-level metadata but no publication originInfo."""
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<mets:mets xmlns:mets="http://www.loc.gov/METS/"
+           xmlns:mods="http://www.loc.gov/mods/v3"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:xlink="http://www.w3.org/1999/xlink">
+  <mets:dmdSec ID="{dmd_id}">
+    <mets:mdWrap MIMETYPE="text/xml" MDTYPE="MODS">
+      <mets:xmlData>
+        <mods:mods version="3.7"
+            xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-7.xsd">
+          <mods:identifier type="vd18">9072299X</mods:identifier>
+          <mods:identifier type="gbv">190330430</mods:identifier>
+          <mods:identifier type="urn">urn:nbn:de:gbv:3:1-831022</mods:identifier>
+          <mods:relatedItem type="host">
+            <mods:titleInfo>
+              <mods:title>Gesammlete Nachrichten und Urkunden</mods:title>
+            </mods:titleInfo>
+            <mods:identifier type="vd18">90722949</mods:identifier>
+            <mods:identifier type="gbv">190330295</mods:identifier>
+            <mods:identifier type="urn">urn:nbn:de:gbv:3:1-831036</mods:identifier>
+          </mods:relatedItem>
+        </mods:mods>
+      </mets:xmlData>
+    </mets:mdWrap>
+  </mets:dmdSec>
+  <mets:fileSec>
+    <mets:fileGrp USE="MAX">
+      <mets:file ID="IMG_{phys_id}" MIMETYPE="image/tiff">
+        <mets:FLocat xlink:href="{phys_id}.tif" LOCTYPE="URL" />
+      </mets:file>
+    </mets:fileGrp>
+    <mets:fileGrp USE="FULLTEXT">
+      <mets:file ID="TXT_{phys_id}" MIMETYPE="application/xml">
+        <mets:FLocat xlink:href="{phys_id}.xml" LOCTYPE="URL" />
+      </mets:file>
+    </mets:fileGrp>
+  </mets:fileSec>
+  <mets:structMap TYPE="PHYSICAL">
+    <mets:div ID="physroot">
+      <mets:div ID="{phys_id}" CONTENTIDS="{page_urn}" ORDER="1">
+        <mets:fptr FILEID="IMG_{phys_id}" />
+        <mets:fptr FILEID="TXT_{phys_id}" />
+      </mets:div>
+    </mets:div>
+  </mets:structMap>
+  <mets:structMap TYPE="LOGICAL">
+    <mets:div ID="logroot" TYPE="document">
+      <mets:div ID="VOL_{phys_id}" TYPE="volume" DMDID="{dmd_id}">
+        <mets:div ID="{log_id}" ORDER="1"></mets:div>
+      </mets:div>
+    </mets:div>
+  </mets:structMap>
+  <mets:structLink>
+    <mets:smLink xlink:from="{log_id}" xlink:to="{phys_id}" />
+  </mets:structLink>
+</mets:mets>
+"""
+    file_path.write_text(xml, encoding="utf-8")
+
+
+def test_mets_generator_multivolume_mods_crashes_on_missing_origininfo(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+
+    page_urn = "urn:nbn:de:gbv:3:1-831022"
+    gt_file = _write_gt_file(out_dir, "page_mv.xml")
+    mets_file = tmp_path / "page_mv.mets.xml"
+    _write_source_mets_multivolume(
+        mets_file,
+        page_urn=page_urn,
+        phys_id="PHYS_0010",
+        log_id="LOG_0010",
+        dmd_id="md15404308",
+    )
+
+    resources = [_build_resource(out_dir, mets_file, gt_file, page_urn)]
+    monkeypatch.setattr(gc, "cc", cc, raising=False)
+    monkeypatch.setattr(gc.ET, "parse", _patch_template_parse_with_struct_link())
+
+    generator = gc.MetsGenerator(out_dir=out_dir, generator_resources=resources)
+    with pytest.raises(TypeError):
+        generator.run()

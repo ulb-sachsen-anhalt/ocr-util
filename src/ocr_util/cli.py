@@ -11,8 +11,8 @@ import ocr_util.eval.model.filter as dofi
 import ocr_util.eval.cli as eval_cli
 import ocr_util.slice.cli as slice_cli
 import ocr_util.show.cli as show_cli
-from ocr_util.corpus.Gt2Mets import Gt2Mets
-from ocr_util.corpus.common import Args
+from ocr_util.corpus.generate_corpus import Gt2Mets
+from ocr_util.corpus.common import CorpusArgs
 
 # script constants
 DEFAULT_VERBOSITY = 0
@@ -26,6 +26,9 @@ CORPUS_CACHE_DIR = os.path.join(
 SUB_CMD_EVALUATE = "eval"
 SUB_CMD_SLICE = "slice"
 SUB_CMD_SHOW = "show"
+
+# Remove this constant as it's now managed by show_cli
+# SUB_CMD_SHOW is kept for backward compatibility with other references
 
 
 def points_type(points: str) -> str:
@@ -44,6 +47,8 @@ def start() -> None:
         dest="subcommand",
         required=True,
     )
+
+    # frames subcommand
     frame_arg_parser = sub_arg_parsers.add_parser(
         SUB_CMD_FRAME,
         help="Filter Contents of provided ALTO-v3-Data by provided Coordinates, where Coordinates span a rectangular"
@@ -126,6 +131,20 @@ def start() -> None:
         dest="corpus_label",
         default="Ground Truth Corpus",
         help="Label for the corpus in the METS logical structure (default: 'Ground Truth Corpus')",
+        required=False,
+    )
+    groundtruth_corpus_arg_parser.add_argument(
+        "--oai-base-url",
+        dest="oai_base_url",
+        help="Base URL for OAI-PMH requests",
+        required=False,
+    )
+    groundtruth_corpus_arg_parser.add_argument(
+        "--clear-cache",
+        dest="clear_cache",
+        action="store_true",
+        default=False,
+        help="Clear the local cache directory before processing (default: False)",
         required=False,
     )
 
@@ -304,24 +323,7 @@ def start() -> None:
     )
 
     # show subcommand
-    show_arg_parser = sub_arg_parsers.add_parser(
-        SUB_CMD_SHOW,
-        help="Visualize OCR segmentation on images",
-        add_help=True,
-    )
-    show_arg_parser.add_argument(
-        "-i", "--image", required=True, help="path image file (TIF)"
-    )
-    show_arg_parser.add_argument(
-        "-o", "--ocr", required=True, help="path OCR file (ALTO or PAGE XML)"
-    )
-    show_arg_parser.add_argument(
-        "-d", "--output-dir", required=False, default=os.getcwd(),
-        help="output directory for visualization results (default: current working directory)"
-    )
-    show_arg_parser.add_argument(
-        "-v", "--verbose", required=False, action="store_true", help="output info"
-    )
+    show_cli.register_arguments(sub_arg_parsers)
 
     args = arg_parser.parse_args()
 
@@ -345,18 +347,20 @@ def start() -> None:
 
     elif args.subcommand == SUB_CMD_GROUNDTRUTH_CORPUS:
         # Create Args object for Gt2Mets
-        gt2mets_args = Args(
+        gt2mets_args = CorpusArgs(
             input_dir=Path(args.input_dir).absolute(),
             output_dir=Path(args.output_dir).absolute(),
-            temp_dir=Path(args.temp_dir).absolute(),
+            local_cache_dir=Path(args.temp_dir).absolute(),
+            oai_base_url=args.oai_base_url,
             limit=int(args.limit),
             corpus_label=args.corpus_label,
+            clear_cache=args.clear_cache
         )
 
         if verbosity > 0:
             print(f"[INFO ] Input directory: {gt2mets_args.input_dir}")
             print(f"[INFO ] Output directory: {gt2mets_args.output_dir}")
-            print(f"[INFO ] Temp directory: {gt2mets_args.temp_dir}")
+            print(f"[INFO ] Temp directory: {gt2mets_args.local_cache_dir}")
             print(
                 f"[INFO ] Limit: {gt2mets_args.limit if gt2mets_args.limit > 0 else 'unlimited'}"
             )

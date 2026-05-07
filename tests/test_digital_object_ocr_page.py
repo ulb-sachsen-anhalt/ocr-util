@@ -195,9 +195,10 @@ def test_digital_object_from_ocr4all_groundtruth():
     assert tho_tree.children[12].children[0].transcription == 'Maréchal, sm. dignité, مير'
 
 
-def test_digital_object_inconsistent_geometry():
-    """Behavior with inconsistent geometry: alert to user,
-    discard from evaluation.
+def test_digital_object_inconsistent_geometry(capsys):
+    """Behavior with inconsistent geometry
+    
+    changed 2026-05-06: print alert to stdout, but go on processing.
     """
 
     # urn+nbn+de+gbv+3+1-112032-p0026-5_ger.gt
@@ -205,11 +206,11 @@ def test_digital_object_inconsistent_geometry():
     ocr_path = f'{TEST_RES_DIR}/groundtruth/page/1751466019_18481220.xml'
 
     # act
-    with pytest.raises(dc.DigitalObjectGeometryException) as _err:
-        to_digital_object(ocr_path)
+    to_digital_object(ocr_path)
 
     # assert
-    assert 'not contained in parent box' in str(_err.value.args[0])
+    captured = capsys.readouterr()
+    assert 'not contained in parent box' in captured.out
 
 
 def test_invalid_page_from_vlm():

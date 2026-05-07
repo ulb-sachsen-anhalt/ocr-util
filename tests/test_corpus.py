@@ -8,9 +8,13 @@ from pathlib import Path
 import pytest
 
 from ocr_util.cli import start
-from ocr_util.corpus.GtResources import GtResources, GtResource
-from ocr_util.corpus.Gt2Mets import Gt2Mets
-from ocr_util.corpus.common import Args, CorpusException
+from ocr_util.corpus.generate_corpus import Gt2Mets
+from ocr_util.corpus.common import (
+    CorpusArgs,
+    CorpusException,
+    GroundtruthFileResource,
+    GtResources,
+)
 
 
 @pytest.fixture(name="mock_gt_files")
@@ -21,9 +25,9 @@ def _fixture_mock_gt_files(tmp_path):
 
     # Create valid GT files with URN pattern
     test_files = [
-        "urn+nbn+de+gbv+3+1-123456-p1-1_deu+lat.xml",
-        "urn+nbn+de+gbv+3+1-123456-p2-1_deu.xml",
-        "urn+nbn+de+gbv+3+1-123456-p3-1_eng.gt.xml",
+        "urn+nbn+de+gbv+3+1-123456-fp0001.xml",
+        "urn+nbn+de+gbv+3+1-123456-fp0002.xml",
+        "urn+nbn+de+gbv+3+1-123456-fp0003.xml",
     ]
 
     for filename in test_files:
@@ -71,14 +75,13 @@ def test_gt_resources_from_dir(mock_gt_files):
 
     # assert
     assert len(resources) == 3
-    assert all(isinstance(r, GtResource) for r in resources)
+    assert all(isinstance(r, GroundtruthFileResource) for r in resources)
 
     # Check first resource details
     first = resources[0]
-    assert first.identifier == "urn:nbn:de:gbv:3:1-123456-p1-1"
-    assert first.file_base_name == "urn+nbn+de+gbv+3+1-123456-p1-1_deu+lat"
-    assert "deu" in first.languages
-    assert "lat" in first.languages
+    assert first.identifier == "urn:nbn:de:gbv:3:1-123456/fragment/page=0001"
+    assert first.file_base_name == "urn+nbn+de+gbv+3+1-123456"
+    assert first.languages is None
 
 
 def test_gt_resources_from_dir_with_limit(mock_gt_files):
@@ -137,30 +140,37 @@ def test_args_creation():
     limit = 10
 
     # act
-    args = Args(
-        input_dir=input_dir, output_dir=output_dir, temp_dir=temp_dir, limit=limit
+    args = CorpusArgs(
+        input_dir=input_dir,
+        output_dir=output_dir,
+        local_cache_dir=temp_dir,
+        oai_base_url="https://opendata.uni-halle.de/oai/dd",
+        limit=limit,
     )
 
     # assert
     assert args.input_dir == input_dir
     assert args.output_dir == output_dir
-    assert args.temp_dir == temp_dir
+    assert args.local_cache_dir == temp_dir
     assert args.limit == limit
 
 
 def test_args_immutability():
-    """Test that Args dataclass is frozen (immutable)"""
+    """Test that Args dataclass values can be updated"""
     # arrange
-    args = Args(
+    args = CorpusArgs(
         input_dir=Path("/input"),
         output_dir=Path("/output"),
-        temp_dir=Path("/temp"),
+        local_cache_dir=Path("/temp"),
+        oai_base_url="https://opendata.uni-halle.de/oai/dd",
         limit=5,
     )
 
-    # act & assert
-    with pytest.raises(Exception):  # FrozenInstanceError or AttributeError
-        args.limit = 10
+    # act
+    args.limit = 10
+
+    # assert
+    assert args.limit == 10
 
 
 # Gt2Mets Class Tests
@@ -172,8 +182,12 @@ def test_gt2mets_initialization_with_valid_args(
     """Test Gt2Mets initialization with valid arguments"""
     # arrange
     output_dir = mock_output_dir.parent / "new_output"
-    args = Args(
-        input_dir=mock_gt_files, output_dir=output_dir, temp_dir=mock_temp_dir, limit=0
+    args = CorpusArgs(
+        input_dir=mock_gt_files,
+        output_dir=output_dir,
+        local_cache_dir=mock_temp_dir,
+        oai_base_url="https://opendata.uni-halle.de/oai/dd",
+        limit=0,
     )
 
     # act
@@ -186,10 +200,11 @@ def test_gt2mets_initialization_with_valid_args(
 def test_gt2mets_initialization_invalid_input_dir(mock_output_dir, mock_temp_dir):
     """Test Gt2Mets raises error for non-existent input directory"""
     # arrange
-    args = Args(
+    args = CorpusArgs(
         input_dir=Path("/nonexistent/path"),
         output_dir=mock_output_dir,
-        temp_dir=mock_temp_dir,
+        local_cache_dir=mock_temp_dir,
+        oai_base_url="https://opendata.uni-halle.de/oai/dd",
         limit=0,
     )
 
@@ -203,29 +218,29 @@ def test_gt2mets_initialization_existing_output_dir(
 ):
     """Test Gt2Mets raises error when output directory already exists"""
     # arrange
-    args = Args(
+    args = CorpusArgs(
         input_dir=mock_gt_files,
         output_dir=mock_output_dir,
-        temp_dir=mock_temp_dir,
+        local_cache_dir=mock_temp_dir,
+        oai_base_url="https://opendata.uni-halle.de/oai/dd",
         limit=0,
     )
 
-    # act & assert
-    with pytest.raises(CorpusException, match="already exists"):
-        Gt2Mets(args)
+    # act
+    gt2mets = Gt2Mets(args)
+
+    # assert
+    assert gt2mets
 
 
 def test_gt2mets_initialization_without_args():
-    """Test Gt2Mets initialization without args (standalone mode)"""
-    # This would normally parse sys.argv, so we need to mock it
-    with unittest.mock.patch("sys.argv", ["gt2mets"]):
-        with pytest.raises(SystemExit):
-            # Will fail because no arguments provided
-            Gt2Mets()
+    """Test Gt2Mets initialization without args raises a TypeError"""
+    with pytest.raises(TypeError):
+        Gt2Mets()
 
 
-@unittest.mock.patch("ocr_util.corpus.Gt2Mets.MetsGenerator")
-@unittest.mock.patch("ocr_util.corpus.Gt2Mets.GtResources")
+@unittest.mock.patch("ocr_util.corpus.generate_corpus.MetsGenerator")
+@unittest.mock.patch("ocr_util.corpus.generate_corpus.corpus_common.GtResources")
 def test_gt2mets_run_creates_directories(
     mock_gt_resources_class, mock_mets_generator, mock_gt_files, tmp_path
 ):
@@ -234,8 +249,12 @@ def test_gt2mets_run_creates_directories(
     output_dir = tmp_path / "new_output"
     temp_dir = tmp_path / "new_temp"
 
-    args = Args(
-        input_dir=mock_gt_files, output_dir=output_dir, temp_dir=temp_dir, limit=0
+    args = CorpusArgs(
+        input_dir=mock_gt_files,
+        output_dir=output_dir,
+        local_cache_dir=temp_dir,
+        oai_base_url="https://opendata.uni-halle.de/oai/dd",
+        limit=0,
     )
 
     # Mock GtResources to return empty list (no GT files to process)
@@ -299,8 +318,10 @@ def test_cli_groundtruth_corpus_invalid_input_dir():
 
 
 def test_cli_groundtruth_corpus_existing_output_dir(mock_gt_files, mock_output_dir):
-    """Test CLI fails when output directory already exists"""
-    with pytest.raises(CorpusException, match="already exists"):
+    """Test CLI continues when output directory already exists"""
+    with unittest.mock.patch("ocr_util.cli.Gt2Mets") as mock_gt2mets_class:
+        mock_instance = unittest.mock.Mock()
+        mock_gt2mets_class.return_value = mock_instance
         with unittest.mock.patch(
             "sys.argv",
             [
@@ -313,6 +334,8 @@ def test_cli_groundtruth_corpus_existing_output_dir(mock_gt_files, mock_output_d
             ],
         ):
             start()
+
+    assert mock_instance.run.called
 
 
 @unittest.mock.patch("ocr_util.cli.Gt2Mets")
@@ -374,7 +397,7 @@ def test_cli_groundtruth_corpus_with_limit(
     # assert
     # Check that Gt2Mets was called with the correct Args
     call_args = mock_gt2mets_class.call_args[0][0]
-    assert isinstance(call_args, Args)
+    assert isinstance(call_args, CorpusArgs)
     assert call_args.limit == 5
 
 
@@ -406,7 +429,7 @@ def test_cli_groundtruth_corpus_with_custom_temp_dir(
 
     # assert
     call_args = mock_gt2mets_class.call_args[0][0]
-    assert call_args.temp_dir == custom_temp.absolute()
+    assert call_args.local_cache_dir == custom_temp.absolute()
 
 
 @unittest.mock.patch("ocr_util.cli.Gt2Mets")
@@ -490,7 +513,7 @@ def test_gt_resources_nested_structure(tmp_path):
     sub_dir.mkdir(parents=True)
 
     # Create GT file in subdirectory
-    test_file = sub_dir / "urn+nbn+de+gbv+3+1-123456-p1-1_deu.xml"
+    test_file = sub_dir / "urn+nbn+de+gbv+3+1-123456-fp0001.xml"
     test_file.write_text("<?xml version='1.0'?><test/>")
 
     # act
@@ -504,10 +527,11 @@ def test_gt_resources_nested_structure(tmp_path):
 def test_args_with_zero_limit():
     """Test Args with limit=0 (unlimited)"""
     # arrange & act
-    args = Args(
+    args = CorpusArgs(
         input_dir=Path("/input"),
         output_dir=Path("/output"),
-        temp_dir=Path("/temp"),
+        local_cache_dir=Path("/temp"),
+        oai_base_url="https://opendata.uni-halle.de/oai/dd",
         limit=0,
     )
 
@@ -520,10 +544,10 @@ def test_gt_resources_language_parsing():
     # arrange
     tmp_dir = Path("/tmp")
 
-    # Create a mock GtResource
-    resource = GtResource(
-        identifier="urn:nbn:de:gbv:3:1-123456-p1-1",
-        file_base_name="urn+nbn+de+gbv+3+1-123456-p1-1_deu+lat+eng",
+    # Create a mock GroundtruthFileResource
+    resource = GroundtruthFileResource(
+        identifier="urn:nbn:de:gbv:3:1-123456/fragment/page=0001",
+        file_base_name="urn+nbn+de+gbv+3+1-123456",
         file_path=tmp_dir / "test.xml",
         relative_file_path=Path("test.xml"),
         languages=["deu", "lat", "eng"],
