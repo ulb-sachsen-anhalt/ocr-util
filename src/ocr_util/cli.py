@@ -11,7 +11,8 @@ import ocr_util.eval.model.filter as dofi
 import ocr_util.eval.cli as eval_cli
 import ocr_util.slice.cli as slice_cli
 import ocr_util.show.cli as show_cli
-from ocr_util.corpus.generate_corpus import Gt2Mets
+import ocr_util.corpus.generate_corpus as gc
+
 from ocr_util.corpus.common import CorpusArgs
 
 # script constants
@@ -346,33 +347,15 @@ def start() -> None:
             print("[INFO ] file_result", file_result)
 
     elif args.subcommand == SUB_CMD_GROUNDTRUTH_CORPUS:
-        # Create Args object for Gt2Mets
-        gt2mets_args = CorpusArgs(
+        corpus_args = CorpusArgs(
             input_dir=Path(args.input_dir).absolute(),
             output_dir=Path(args.output_dir).absolute(),
             local_cache_dir=Path(args.temp_dir).absolute(),
-            oai_base_url=args.oai_base_url,
             limit=int(args.limit),
             corpus_label=args.corpus_label,
             clear_cache=args.clear_cache
         )
-
-        if verbosity > 0:
-            print(f"[INFO ] Input directory: {gt2mets_args.input_dir}")
-            print(f"[INFO ] Output directory: {gt2mets_args.output_dir}")
-            print(f"[INFO ] Temp directory: {gt2mets_args.local_cache_dir}")
-            print(
-                f"[INFO ] Limit: {gt2mets_args.limit if gt2mets_args.limit > 0 else 'unlimited'}"
-            )
-
-        try:
-            gt2mets = Gt2Mets(gt2mets_args)
-            gt2mets.run()
-            if verbosity > 0:
-                print("[INFO ] GT-METS generation completed successfully")
-        except Exception as e:
-            print(f"[ERROR] Failed to generate METS files: {e}")
-            raise
+        gc.generate(corpus_args)
 
     elif args.subcommand == SUB_CMD_EVALUATE:
         eval_args = vars(args)

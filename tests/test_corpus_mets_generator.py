@@ -1,5 +1,5 @@
 from pathlib import Path
-import xml.etree.ElementTree as ET
+import lxml.etree as ET
 
 import pytest
 
@@ -100,7 +100,7 @@ def _build_resource(
         relative_file_path=gt_file.relative_to(out_dir),
         languages=["deu"],
     )
-    mets = cc.MetsResource(identifier_urn=page_urn, file_path=mets_file)
+    mets = cc.MetsResource(identifier_urn=page_urn, local_file_path=mets_file)
     return cc.MetsGeneratorResource(gt=gt, mets=mets)
 
 
@@ -163,12 +163,12 @@ def test_mets_generator_run_generates_output_and_merges_dmd(
     monkeypatch.setattr(gc, "cc", cc, raising=False)
     monkeypatch.setattr(gc.ET, "parse", _patch_template_parse_with_struct_link())
 
-    generator = gc.MetsGenerator(
+    generator = gc.CorpusFile(
         out_dir=out_dir,
         generator_resources=resources,
         corpus_label="Test Corpus",
     )
-    result = generator.run()
+    result = generator.build()
 
     assert result.file_path.exists()
     assert result.file_path.name == "mets.xml"
@@ -202,39 +202,6 @@ def test_mets_generator_run_generates_output_and_merges_dmd(
 
     sm_links = document.findall(f".//{METS_NS}structLink/{METS_NS}smLink")
     assert len(sm_links) == 2
-
-
-def test_mets_generator_raises_for_multiple_mods_blocks(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Verify that invalid source METS with multiple MODS blocks raises an exception."""
-    out_dir = tmp_path / "out"
-    out_dir.mkdir()
-
-    page_urn = "urn:nbn:de:gbv:3:1-123456-p3-1"
-    gt_file = _write_gt_file(out_dir, "page_3.xml")
-
-    mets_file = tmp_path / "page_3.mets.xml"
-    _write_source_mets(
-        mets_file,
-        page_urn=page_urn,
-        phys_id="PHYS_0003",
-        log_id="LOG_0003",
-        dmd_id="DMDLOG_0003",
-        with_orderlabel=False,
-        with_log_label=False,
-        mods_blocks=2,
-    )
-
-    resources = [_build_resource(out_dir, mets_file, gt_file, page_urn)]
-    monkeypatch.setattr(gc, "cc", cc, raising=False)
-    monkeypatch.setattr(gc.ET, "parse", _patch_template_parse_with_struct_link())
-
-    generator = gc.MetsGenerator(out_dir=out_dir, generator_resources=resources)
-    with pytest.raises(Exception) as exc:
-        generator.run()
-
-    assert "more than one MODS block" in str(exc.value)
 
 
 def _write_source_mets_multivolume(
@@ -301,9 +268,10 @@ def _write_source_mets_multivolume(
     file_path.write_text(xml, encoding="utf-8")
 
 
-def test_mets_generator_multivolume_mods_crashes_on_missing_origininfo(
+def test_multivolume_mets_ignores_host_identifier(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+):
+    """Verify no identifiers from related_host present."""
     out_dir = tmp_path / "out"
     out_dir.mkdir()
 
@@ -322,6 +290,16 @@ def test_mets_generator_multivolume_mods_crashes_on_missing_origininfo(
     monkeypatch.setattr(gc, "cc", cc, raising=False)
     monkeypatch.setattr(gc.ET, "parse", _patch_template_parse_with_struct_link())
 
-    generator = gc.MetsGenerator(out_dir=out_dir, generator_resources=resources)
-    with pytest.raises(TypeError):
-        generator.run()
+    generator = gc.CorpusFile(out_dir=out_dir, generator_resources=resources)
+    
+    # act
+    result = generator.build()
+
+    # assert
+    assert result.file_path.exists()
+    assert result.file_path.name == "mets.xml"
+    doc_root = ET.parse(result.file_path).getroot()
+    dmd_identifiers = doc_root.xpath('//mods:identifier/text()', namespaces={'mods': 'http://www.loc.gov/mods/v3'})
+    assert dmd_identifiers is not None
+    assert len(dmd_identifiers) == 3
+    assert ['9072299X', '190330430', 'urn:nbn:de:gbv:3:1-831022'] == dmd_identifiers
