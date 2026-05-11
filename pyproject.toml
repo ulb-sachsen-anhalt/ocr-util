@@ -65,3 +65,6 @@ precision = 2
 line-length = 120
 target-version = ["py310"]
 include = '\.pyi?$'
+
+[tool.pylint.main]
+extension-pkg-allow-list=["lxml.etree"]
