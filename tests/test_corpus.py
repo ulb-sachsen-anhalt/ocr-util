@@ -67,11 +67,11 @@ def _fixture_mock_temp_dir(tmp_path):
 def test_gt_resources_from_dir(mock_gt_files):
     """Test that GtResources correctly identifies and parses GT files"""
     # act
-    resources = cc.GroundtruthFileResource.from_dir(mock_gt_files, limit=0)
+    resources = cc.GroundtruthFile.from_dir(mock_gt_files, limit=0)
 
     # assert
     assert len(resources) == 3
-    assert all(isinstance(r, cc.GroundtruthFileResource) for r in resources)
+    assert all(isinstance(r, cc.GroundtruthFile) for r in resources)
 
     # Check first resource details
     first = resources[0]
@@ -83,7 +83,7 @@ def test_gt_resources_from_dir(mock_gt_files):
 def test_gt_resources_from_dir_with_limit(mock_gt_files):
     """Test that GtResources respects the limit parameter"""
     # act
-    resources = cc.GroundtruthFileResource.from_dir(mock_gt_files, limit=2)
+    resources = cc.GroundtruthFile.from_dir(mock_gt_files, limit=2)
 
     # assert
     assert len(resources) == 2
@@ -95,7 +95,7 @@ def test_gt_resources_from_dir_copy(mock_gt_files, tmp_path):
     output_dir = tmp_path / "output_copy"
 
     # act
-    resources = cc.GroundtruthFileResource.from_dir_copy(mock_gt_files, output_dir, limit=0)
+    resources = cc.GroundtruthFile.from_dir_copy(mock_gt_files, output_dir, limit=0)
 
     # assert
     assert len(resources) == 3
@@ -118,7 +118,7 @@ def test_gt_resources_invalid_filenames(tmp_path):
     (gt_dir / "another_bad_name.xml").write_text("<test/>")
 
     # act
-    resources = cc.GroundtruthFileResource.from_dir(gt_dir, limit=0)
+    resources = cc.GroundtruthFile.from_dir(gt_dir, limit=0)
 
     # assert
     assert len(resources) == 0
@@ -471,7 +471,7 @@ def test_gt_resources_empty_directory(tmp_path):
     empty_dir.mkdir()
 
     # act
-    resources = cc.GroundtruthFileResource.from_dir(empty_dir, limit=0)
+    resources = cc.GroundtruthFile.from_dir(empty_dir, limit=0)
 
     # assert
     assert len(resources) == 0
@@ -489,7 +489,7 @@ def test_gt_resources_nested_structure(tmp_path):
     test_file.write_text("<?xml version='1.0'?><test/>")
 
     # act
-    resources = cc.GroundtruthFileResource.from_dir(gt_dir, limit=0)
+    resources = cc.GroundtruthFile.from_dir(gt_dir, limit=0)
 
     # assert
     assert len(resources) == 1
@@ -516,7 +516,7 @@ def test_gt_resources_language_parsing():
     tmp_dir = Path("/tmp")
 
     # Create a mock GroundtruthFileResource
-    resource = cc.GroundtruthFileResource(
+    resource = cc.GroundtruthFile(
         identifier="urn:nbn:de:gbv:3:1-123456/fragment/page=0001",
         file_base_name="urn+nbn+de+gbv+3+1-123456",
         file_path=tmp_dir / "test.xml",

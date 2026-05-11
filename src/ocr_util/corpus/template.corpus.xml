@@ -8,7 +8,7 @@
            xmlns:zvdd="http://zvdd.gdz-cms.de/"
            xsi:schemaLocation="http://www.loc.gov/METS/ http://www.loc.gov/standards/mets/version112/mets.xsd">
     <mets:fileSec>
-        <mets:fileGrp USE="OCR-D-IMG">
+        <mets:fileGrp USE="GT-IMAGE">
         </mets:fileGrp>
         <mets:fileGrp USE="FULLTEXT">
         </mets:fileGrp>
@@ -18,7 +18,7 @@
         </mets:div>
     </mets:structMap>
     <mets:structMap TYPE="LOGICAL">
-        <mets:div ID="logroot" LABEL="Ground Truth Corpus" TYPE="document">
+        <mets:div ID="corpus_root" LABEL="Ground Truth Corpus" TYPE="document">
         </mets:div>
     </mets:structMap>
     <mets:structLink>

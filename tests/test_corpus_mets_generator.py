@@ -92,8 +92,8 @@ def _write_source_mets(
 
 def _build_resource(
     out_dir: Path, mets_file: Path, gt_file: Path, page_urn: str
-) -> cc.MetsGeneratorResource:
-    gt = cc.GroundtruthFileResource(
+) -> cc.CorpusInput:
+    gt = cc.GroundtruthFile(
         identifier=page_urn,
         file_base_name=gt_file.stem,
         file_path=gt_file,
@@ -101,7 +101,7 @@ def _build_resource(
         languages=["deu"],
     )
     mets = cc.MetsResource(identifier_urn=page_urn, local_file_path=mets_file)
-    return cc.MetsGeneratorResource(gt=gt, mets=mets)
+    return cc.CorpusInput(groundtruth_file=gt, cached_media_mets_file=mets)
 
 
 def _patch_template_parse_with_struct_link():

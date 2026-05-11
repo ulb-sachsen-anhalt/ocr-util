@@ -235,7 +235,7 @@ class OaiPmhClient:
                     f"{error_code} - {error_text}"
                 )
         except ET.XMLSyntaxError as e:
-            raise cc.CorpusException(f"Invalid XML response: {e}")
+            raise cc.CorpusException(f"Invalid XML response: {e} for {identifier}")
 
         return response.content
 
@@ -301,13 +301,15 @@ class RecordMetadataResolver:
         )
         self._oai_client = oai_client or OaiPmhClient()
 
-    def fetch(self, urn:str, file_path:pathlib.Path) -> cc.MetsResource:
-        """Ensure METS file exists locally and return resulting ``MetsResource``.
+    def fetch(self, corpus_input: cc.CorpusInput, cache_path: pathlib.Path) -> cc.CorpusInput:
+        """Ensure METS file exists locally and return resulting ``CorpusInput``.
 
         The method is cache-aware: if the file already exists, no network calls are made.
         """
-        if not file_path.exists():
-            resolution = self._handle_resolver.resolve_handle(urn)
+        local_cache = cache_path.joinpath(f'{corpus_input.groundtruth_file.file_base_name}.mets.xml')
+        # file_path = corpus_input.mets_file
+        if not local_cache.exists():
+            resolution = self._handle_resolver.resolve_handle(corpus_input.identifier_urn)
             calculated_oai_host = resolution.oai_record_urn.split("/")[0]
             oai_base_url = _resolve_oai_base_url(
                 host=calculated_oai_host,
@@ -317,12 +319,14 @@ class RecordMetadataResolver:
                 identifier=resolution.oai_record_urn,
                 oai_base_url=oai_base_url,
             )
-            with open(file_path, "wb") as mets_file:
+            with open(local_cache, "wb") as mets_file:
                 mets_file.write(mets_content)
-        return cc.MetsResource(
-            identifier_urn=urn,
-            local_file_path=file_path
-        )
+        corpus_input.cached_media_mets_file = local_cache
+        return corpus_input
+        # return cc.MetsResource(
+        #     identifier_urn=urn,
+        #     local_file_path=file_path
+        # )
 
 
 def wrap_request(url:str, timeout = 30,
