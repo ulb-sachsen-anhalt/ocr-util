@@ -86,12 +86,13 @@ class GroundtruthFile:
                 if the_match is not None:
                     urn_enc = f"{the_match.group(1)}/fragment/page={the_match.group(2)}"
                     urn_dec: str = urn_enc.replace('+', ':').replace('x','X')
-                    resources.append(GroundtruthFile(
+                    gt_file = GroundtruthFile(
                         identifier=urn_dec,
                         file_base_name=the_match.group(1),
                         file_path=file_path,
                         relative_file_path=file_path.relative_to(gt_dir),
-                    ))
+                    )
+                    resources.append(gt_file)
                     if 0 < limit <= len(resources):
                         break
                 else:
@@ -111,10 +112,14 @@ class CorpusInput:
     identifier_urn: str
     groundtruth_file: GroundtruthFile
     cached_media_mets_file: typing.Optional[pathlib.Path] = None
+    
+    def __init__(self, groundtruth_file: GroundtruthFile):
+        self.groundtruth_file = groundtruth_file
+        self.identifier_urn = groundtruth_file.identifier
+    
 
 @dataclasses.dataclass
 class MetsSection:
-    original_dmdid: str
     phys_div: ET._Element
     file_image: ET._Element
     file_fulltext: ET._Element
@@ -122,6 +127,7 @@ class MetsSection:
     log_div: ET._Element
     calculated_dmdid: typing.Optional[str] = None
     dmd_sec: typing.Optional[ET._Element] = None
+
 
 @dataclasses.dataclass
 class CorpusGeneratorResult:
@@ -193,6 +199,9 @@ class MetsCorpusFile(MetsFile):
     """Represents a METS file resource for corpus generation."""
     def __init__(self, file_path: pathlib.Path, **kwargs):
         super().__init__(file_path, **kwargs)
+        corpus_label = self.kwargs.get("corpus_label")
+        if corpus_label:
+            self.logical_root.set("LABEL", str(corpus_label))
         self._build_internal_structures()
         # the_root = self.document.getroot()
         # prev_phys_root = the_root.findall('.//mets:div[@ID="physroot"]', self.nsmap)
@@ -235,8 +244,6 @@ class MetsCorpusFile(MetsFile):
         """Attach extracted METS sections to the corpus METS document
         but attach MODS only if not already present in the corpus METS file."""
 
-        # self.physical_root.append(extract.phys_div)
-        # self.link_root.append(extract.sm_link)
         self.file_group_image.append(extract.file_image)
         self.file_group_fulltext.append(extract.file_fulltext)
         self.logical_root.append(extract.log_div)
@@ -261,12 +268,13 @@ class MetsCorpusFile(MetsFile):
 
     def finalize(self):
         """Re-order attached gt-image containers"""
-        # phys_divs_with_order_attrib: list[ET._Element] = self.physical_root.findall(
-        #     './/mets:div[@ORDER]',
-        #     self.nsmap
-        # )
-        # for i, elm in enumerate(phys_divs_with_order_attrib):
-        #     elm.set('ORDER', str(i + 1))
+        the_root = self.document.getroot()
+        phys_divs_with_order_attrib: list[ET._Element] = the_root.findall(
+            './/mets:structMap[@TYPE="PHYSICAL"]//mets:div[@ORDER]',
+            self.nsmap
+        )
+        for i, elm in enumerate(phys_divs_with_order_attrib):
+            elm.set('ORDER', str(i + 1))
 
         log_divs_with_order_attrib: list[ET._Element] = self.logical_root.findall(
             './/mets:div[@ORDER]',
@@ -277,10 +285,10 @@ class MetsCorpusFile(MetsFile):
 
     def write(self, out_dir: pathlib.Path) -> pathlib.Path:
         """Write the METS XML document to the specified file path."""
-        encoding = self.__document.docinfo.encoding if self.__document.docinfo.encoding else 'UTF-8'
-        ET.indent(self.__document.getroot(), space=(" " * INDENT))
+        encoding = self.document.docinfo.encoding if self.document.docinfo.encoding else 'UTF-8'
+        ET.indent(self.document.getroot(), space=(" " * INDENT))
         out_file: pathlib.Path = out_dir.joinpath(DEFAULT_METS_FILE_NAME)
-        self.__document.write(
+        self.document.write(
             out_file,
             xml_declaration=True,
             pretty_print=True,
@@ -439,6 +447,8 @@ class MetsResourceFile(MetsFile):
         if publication_info is not None:
             mods_root.append(publication_info)
 
+        calculated_dmdid = f"{hash(page_urn)dmd_id}-page-{(index + 1):04d}"
+        dmd_sec.set('ID', calculated_dmdid)
         return MetsSection(
             phys_div=page_div,
             file_image=file_image,
@@ -446,7 +456,7 @@ class MetsResourceFile(MetsFile):
             sm_link=sm_link,
             log_div=log_div,
             dmd_sec=dmd_sec,
-            original_dmdid=dmd_id,
+            calculated_dmdid=calculated_dmdid,
         )
 
 

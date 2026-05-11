@@ -31,6 +31,16 @@ class DummyResponse:
         return self._payload
 
 
+def _build_corpus_input(tmp_path: Path, base_name: str = "sample") -> cc.CorpusInput:
+    gt_file = cc.GroundtruthFile(
+        identifier="urn:nbn:de:3-1-23",
+        file_base_name=base_name,
+        file_path=tmp_path / f"{base_name}.xml",
+        relative_file_path=Path(f"{base_name}.xml"),
+    )
+    return cc.CorpusInput(gt_file)
+
+
 @patch("ocr_util.corpus.load_metadata.requests.get")
 def test_solr_strategy_resolves_handle_from_handle_field(mock_get: Mock) -> None:
     """Resolve a SOLR hit that provides both handle and METS URI fields."""
@@ -104,55 +114,54 @@ def test_handle_resolver_chain_falls_back_from_solr_to_nbn(mock_get: Mock) -> No
     assert result.source == "nbn-resolver"
 
 
-def test_record_metadata_resolver_writes_file(tmp_path: Path) -> None:
+@patch("ocr_util.corpus.load_metadata.OaiPmhClient.fetch_mets")
+@patch("ocr_util.corpus.load_metadata.HandleResolverChain.resolve_handle")
+def test_record_metadata_resolver_writes_file(mock_resolve_handle: Mock, mock_fetch_mets: Mock, tmp_path: Path) -> None:
     """Write fetched METS bytes to disk and return a MetsResource."""
-    handle_resolver = Mock()
-    handle_resolver.resolve_handle.return_value = lm.RecordResolutionResult(
+    mock_resolve_handle.return_value = lm.RecordResolutionResult(
         oai_record_urn="oai:opendata.uni-halle.de:123/456",
         source="solr",
     )
-    oai_client = Mock()
-    oai_client.fetch_mets.return_value = b"<mets/>"
+    mock_fetch_mets.return_value = b"<mets/>"
 
-    out_file = tmp_path / "sample.mets.xml"
+    corpus_input = _build_corpus_input(tmp_path, base_name="sample")
+    expected_mets_file = tmp_path / "sample.mets.xml"
 
-    resolver = lm.RecordMetadataResolver(
-        handle_resolver=handle_resolver,
-        oai_client=oai_client,
-    )
+    resolver = lm.RecordMetadataResolver()
 
-    result = resolver.fetch(urn="urn:nbn:de:3-1-23",
-                            file_path=out_file)
+    result = resolver.fetch(corpus_input=corpus_input, cache_path=tmp_path)
 
-    handle_resolver.resolve_handle.assert_called_once_with("urn:nbn:de:3-1-23")
-    oai_client.fetch_mets.assert_called_once_with(
+    mock_resolve_handle.assert_called_once_with("urn:nbn:de:3-1-23")
+    mock_fetch_mets.assert_called_once_with(
         identifier="oai:opendata.uni-halle.de:123/456",
         oai_base_url="https://opendata.uni-halle.de/oai/dd",
     )
     assert result.identifier_urn == "urn:nbn:de:3-1-23"
-    assert out_file.exists()
-    assert out_file.read_bytes() == b"<mets/>"
+    assert result.cached_media_mets_file == expected_mets_file
+    assert expected_mets_file.exists()
+    assert expected_mets_file.read_bytes() == b"<mets/>"
 
 
-def test_record_metadata_resolver_raises_without_oai_base_url_mapping(tmp_path: Path) -> None:
+@patch("ocr_util.corpus.load_metadata.OaiPmhClient.fetch_mets")
+@patch("ocr_util.corpus.load_metadata.HandleResolverChain.resolve_handle")
+def test_record_metadata_resolver_raises_without_oai_base_url_mapping(
+    mock_resolve_handle: Mock,
+    mock_fetch_mets: Mock,
+    tmp_path: Path,
+) -> None:
     """Raise CorpusException when no OAI base URL can be inferred for host."""
-    handle_resolver = Mock()
-    handle_resolver.resolve_handle.return_value = lm.RecordResolutionResult(
+    mock_resolve_handle.return_value = lm.RecordResolutionResult(
         oai_record_urn="oai:example.invalid:123/456",
         source="solr",
     )
-    oai_client = Mock()
 
-    out_file = tmp_path / "sample.mets.xml"
+    corpus_input = _build_corpus_input(tmp_path, base_name="sample")
 
-    resolver = lm.RecordMetadataResolver(
-        handle_resolver=handle_resolver,
-        oai_client=oai_client,
-    )
+    resolver = lm.RecordMetadataResolver()
 
     with pytest.raises(cc.CorpusException, match="Unable to determine OAI-PMH base URL"):
-        resolver.fetch(urn="urn:nbn:de:3-1-23", file_path=out_file)
-    oai_client.fetch_mets.assert_not_called()
+        resolver.fetch(corpus_input=corpus_input, cache_path=tmp_path)
+    mock_fetch_mets.assert_not_called()
 
 
 @patch("ocr_util.corpus.load_metadata.requests.get")

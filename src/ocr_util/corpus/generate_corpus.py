@@ -22,14 +22,6 @@ DEFAULT_TEMP_DIR = pathlib.Path.home().joinpath('.cache', 'odem_gt_2_mets')
 DEFAULT_LIMIT = 0
 
 
-# METS_MEDIA_TYPES: Final[set[str]] = {
-#     "monograph",
-#     "volume",
-#     "issue",
-#     "additional",
-# }
-
-
 
 def fetch_resources(cache_path:pathlib.Path, gt_files: list[cc.CorpusInput]) -> list[cc.CorpusInput]:
     """Fetch required METS metadata parallel for given inputs."""
@@ -44,39 +36,21 @@ def fetch_resources(cache_path:pathlib.Path, gt_files: list[cc.CorpusInput]) -> 
         return [future.result() for future in futures]
 
 
-# def find_dmd_id(doc, nsmap) -> str:
-#     """Find DMDID in logical structMap of METS file."""
-#     logical_root = doc.find('.//mets:structMap[@TYPE="LOGICAL"]', nsmap)
-#     if logical_root is None:
-#         raise cc.CorpusException(f"No logical structMap in METS file {doc.base} found")
-#     logical_children = logical_root.findall('.//mets:div', nsmap)
-#     for element in logical_children:
-#         the_type: str = element.get("TYPE", None)
-#         dmd_id: str = element.get("DMDID", None)
-#         if dmd_id is not None and the_type in METS_MEDIA_TYPES:
-#             return dmd_id
-#     raise cc.CorpusException(f"no DMD_ID in METS file {doc.base} found")
-
-
 class CorpusFile:
     """Ground Truth Corpus in METS format."""
 
-    def __init__(self, out_dir: Path, generator_resources: list[cc.CorpusInput],
-                 corpus_label: str = "gt_corpus", **kwargs) -> None:
-        self.__out_dir: Final[Path] = out_dir
+    def __init__(self, corpus_args: cc.CorpusArgs,
+                 generator_resources: list[cc.CorpusInput],
+                 **kwargs) -> None:
+        self.__cargs = corpus_args
+        self.__out_dir: Final[Path] = self.__cargs.output_dir
         self.__generator_resources: Final[list[cc.CorpusInput]] = generator_resources
         # Template file is located in the same directory as this module
         template_path = Path(__file__).parent / 'template.corpus.xml'
         self.corpus_template = template_path
         self.kwargs = kwargs
-        self.file = cc.MetsCorpusFile(template_path, corpus_label=corpus_label, **kwargs)
-        # self.corpus_nsmap = self.corpus_root.nsmap
-        self.corpus_label = corpus_label
-
-    # @property
-    # def corpus_template(self) -> ET._ElementTree:
-    #     """Get the METS XML document representing the corpus template."""
-    #     return self.__mets_xml_document
+        self.corpus_label = self.__cargs.corpus_label
+        self.file = cc.MetsCorpusFile(template_path, corpus_label=self.corpus_label, **kwargs)
 
     # @corpus_template.setter
     # def corpus_template(self, path_template: Path) -> None:
@@ -301,26 +275,13 @@ def generate(cargs: cc.CorpusArgs) -> cc.CorpusGeneratorResult:
         out_dir=cargs.output_dir.joinpath(cc.GT_TARGET_SUBDIR),
         limit=cargs.limit
     )
-    corpus_inputs = [
-        cc.CorpusInput(
-            identifier_urn=gt_file.identifier,
-            groundtruth_file=gt_file
-        )
+    corpus_inputs = [cc.CorpusInput(groundtruth_file=gt_file)
         for gt_file
         in gt_files
     ]
     local_cache_path = Path(f'{cargs.local_cache_dir}').joinpath('mets')
-    corpus_resources = fetch_resources(local_cache_path, corpus_inputs)
-    # metadata_resources = [
-    #     cc.CorpusInput(groundtruth_file=gt_file, mets_file=mets_resources[i])
-    #     for i, gt_file
-    #     in enumerate(gt_files)
-    # ]
-    corpus_file = CorpusFile(
-        cargs.output_dir,
-        corpus_resources,
-        corpus_label=cargs.corpus_label
-    )
+    corpus_input_with_resources = fetch_resources(local_cache_path, corpus_inputs)
+    corpus_file = CorpusFile(cargs, corpus_input_with_resources)
     return corpus_file.build()
 
 
