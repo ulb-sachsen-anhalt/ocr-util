@@ -100,9 +100,19 @@ def _build_resource(
         relative_file_path=gt_file.relative_to(out_dir),
         languages=["deu"],
     )
-    mets = cc.MetsResource(identifier_urn=page_urn, local_file_path=mets_file)
-    return cc.CorpusInput(groundtruth_file=gt, cached_media_mets_file=mets)
+    # mets = cc.MetsResource(identifier_urn=page_urn, local_file_path=mets_file)
+    corpus_input = cc.CorpusInput(groundtruth_file=gt)
+    corpus_input.cached_media_mets_file = mets_file
+    return corpus_input
 
+
+def _build_corpus_args(out_dir: Path, corpus_label: str = "Ground Truth Corpus") -> cc.CorpusArgs:
+    return cc.CorpusArgs(
+        input_dir=out_dir,
+        output_dir=out_dir,
+        local_cache_dir=out_dir,
+        corpus_label=corpus_label,
+    )
 
 def _patch_template_parse_with_struct_link():
     original_parse = gc.ET.parse
@@ -118,18 +128,19 @@ def _patch_template_parse_with_struct_link():
     return parse_with_struct_link
 
 
-def test_mets_generator_run_generates_output_and_merges_dmd(
+def test_mwe_corpus_file(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Verify successful METS generation, order normalization, and DMD deduplication."""
+    """Verify successful METS generation, order normalization, and DMD deduplication
+    for a corpus with two pages sharing common MODS metadata."""
     out_dir = tmp_path / "out"
     out_dir.mkdir()
 
-    page_urn_1 = "urn:nbn:de:gbv:3:1-123456-p1-1"
-    page_urn_2 = "urn:nbn:de:gbv:3:1-123456-p2-1"
+    page_urn_1 = "urn:nbn:de:gbv:3:1-123456/fragment/page=0001"
+    page_urn_2 = "urn:nbn:de:gbv:3:1-123456/fragment/page=0002"
 
-    gt_1 = _write_gt_file(out_dir, "page_1.xml")
-    gt_2 = _write_gt_file(out_dir, "page_2.xml")
+    gt_1 = _write_gt_file(out_dir, "urn+nbn+de+gbv+3+1-123456-fp-0001.xml")
+    gt_2 = _write_gt_file(out_dir, "urn+nbn+de+gbv+3+1-123456-fp-0002.xml")
 
     mets_1 = tmp_path / "page_1.mets.xml"
     mets_2 = tmp_path / "page_2.mets.xml"
@@ -163,19 +174,18 @@ def test_mets_generator_run_generates_output_and_merges_dmd(
     monkeypatch.setattr(gc, "cc", cc, raising=False)
     monkeypatch.setattr(gc.ET, "parse", _patch_template_parse_with_struct_link())
 
-    generator = gc.CorpusFile(
-        out_dir=out_dir,
-        generator_resources=resources,
-        corpus_label="Test Corpus",
+    cfile = gc.CorpusFile(
+      corpus_args=_build_corpus_args(out_dir, corpus_label="Test Corpus"),
+      generator_resources=resources,
     )
-    result = generator.build()
+    result = cfile.build()
 
     assert result.file_path.exists()
     assert result.file_path.name == "mets.xml"
 
     document = ET.parse(result.file_path)
 
-    log_root = document.find(f'.//{METS_NS}div[@ID="logroot"]')
+    log_root = document.find(f'.//{METS_NS}div[@ID="corpus_root"]')
     assert log_root is not None
     assert log_root.get("LABEL") == "Test Corpus"
 
@@ -268,7 +278,7 @@ def _write_source_mets_multivolume(
     file_path.write_text(xml, encoding="utf-8")
 
 
-def test_multivolume_mets_ignores_host_identifier(
+def test_corpus_with_multivolumes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     """Verify no identifiers from related_host present."""
@@ -290,7 +300,10 @@ def test_multivolume_mets_ignores_host_identifier(
     monkeypatch.setattr(gc, "cc", cc, raising=False)
     monkeypatch.setattr(gc.ET, "parse", _patch_template_parse_with_struct_link())
 
-    generator = gc.CorpusFile(out_dir=out_dir, generator_resources=resources)
+    generator = gc.CorpusFile(
+      corpus_args=_build_corpus_args(out_dir),
+      generator_resources=resources,
+    )
     
     # act
     result = generator.build()

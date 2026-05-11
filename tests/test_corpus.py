@@ -21,9 +21,9 @@ def _fixture_mock_gt_files(tmp_path):
 
     # Create valid GT files with URN pattern
     test_files = [
-        "urn+nbn+de+gbv+3+1-123456-fp0001.xml",
-        "urn+nbn+de+gbv+3+1-123456-fp0002.xml",
-        "urn+nbn+de+gbv+3+1-123456-fp0003.xml",
+        "urn+nbn+de+gbv+3+1-123456-fp-0001.xml",
+        "urn+nbn+de+gbv+3+1-123456-fp-0002.xml",
+        "urn+nbn+de+gbv+3+1-123456-fp-0003.xml",
     ]
 
     for filename in test_files:
@@ -171,7 +171,7 @@ def test_args_immutability():
 
 
 @unittest.mock.patch("ocr_util.corpus.generate_corpus.CorpusFile")
-@unittest.mock.patch("ocr_util.corpus.generate_corpus.cc.GroundtruthFileResource")
+@unittest.mock.patch("ocr_util.corpus.generate_corpus.cc.GroundtruthFile")
 def test_gt2mets_initialization_with_valid_args(
     mock_gt_resource_class, mock_corpus_file_class, mock_gt_files, mock_output_dir, mock_temp_dir
 ):
@@ -210,7 +210,7 @@ def test_gt2mets_initialization_invalid_input_dir(mock_output_dir, mock_temp_dir
 
 
 @unittest.mock.patch("ocr_util.corpus.generate_corpus.CorpusFile")
-@unittest.mock.patch("ocr_util.corpus.generate_corpus.cc.GroundtruthFileResource")
+@unittest.mock.patch("ocr_util.corpus.generate_corpus.cc.GroundtruthFile")
 def test_gt2mets_initialization_existing_output_dir(
     mock_gt_resource_class, mock_corpus_file_class, mock_gt_files, mock_output_dir, mock_temp_dir
 ):
@@ -239,7 +239,7 @@ def test_gt2mets_initialization_without_args():
 
 
 @unittest.mock.patch("ocr_util.corpus.generate_corpus.CorpusFile")
-@unittest.mock.patch("ocr_util.corpus.generate_corpus.cc.GroundtruthFileResource")
+@unittest.mock.patch("ocr_util.corpus.generate_corpus.cc.GroundtruthFile")
 def test_gt2mets_run_creates_directories(
     mock_gt_resources_class, mock_corpus_file_class, mock_gt_files, tmp_path
 ):
@@ -485,7 +485,7 @@ def test_gt_resources_nested_structure(tmp_path):
     sub_dir.mkdir(parents=True)
 
     # Create GT file in subdirectory
-    test_file = sub_dir / "urn+nbn+de+gbv+3+1-123456-fp0001.xml"
+    test_file = sub_dir / "urn+nbn+de+gbv+3+1-123456-fp-0001.xml"
     test_file.write_text("<?xml version='1.0'?><test/>")
 
     # act
