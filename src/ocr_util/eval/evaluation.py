@@ -501,24 +501,43 @@ def get_statistics(data_points):
 
 
 def strip_outliers_from(data_tuples, fence_ratio=1.5):
-    """Determine a data set's outliers by interquartile range (IQR)
+    """Determine a data set's outliers by the standard Tukey interquartile range (IQR) fence.
 
-    calculate data points
-     * below median of quartile 1 (lower fence), and
-     * above median of quartile 3 (upper fence)
+    Q1 and Q3 are estimated as the medians of the lower and upper halves of the
+    data respectively.  The fences are then:
+
+        lower_fence = Q1 - fence_ratio * IQR
+        upper_fence = Q3 + fence_ratio * IQR
+
+    where IQR = Q3 - Q1.  With the default fence_ratio of 1.5 this identifies
+    "mild" outliers as defined by Tukey (1977).
+
+    Args:
+        data_tuples: Sequence of (path, metric_value, n_refs) triples.
+        fence_ratio: Multiplier applied to the IQR.  Use 1.5 for mild outliers
+            and 3.0 for extreme outliers (Tukey, 1977, pp. 44–45).
+
+    Returns:
+        Tuple (regulars, q1, q3) where *regulars* is the filtered list of tuples
+        and *q1* / *q3* are the quartile estimates used for the fences.
+
+    Reference:
+        Tukey, J. W. (1977). *Exploratory Data Analysis*. Addison-Wesley,
+        pp. 44–45.
     """
 
     data_points = [e[1] for e in data_tuples]
     median = np.median(data_points)
-    quart_one = np.median([v for v in data_points if v < median])
-    quart_thr = np.median([v for v in data_points if v > median])
+    q1 = np.median([v for v in data_points if v < median])
+    q3 = np.median([v for v in data_points if v > median])
+    iqr = q3 - q1
     regulars = [
         data
         for data in data_tuples
-        if data[1] >= (quart_one - fence_ratio * (quart_thr - quart_one))
-        and data[1] <= (quart_one + fence_ratio * (quart_thr - quart_one))
+        if data[1] >= (q1 - fence_ratio * iqr)
+        and data[1] <= (q3 + fence_ratio * iqr)
     ]
-    return (regulars, quart_one, quart_thr)
+    return (regulars, q1, q3)
 
 
 def _get_groundtruth_from_filename(file_path) -> str:
