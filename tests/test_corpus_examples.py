@@ -92,7 +92,7 @@ def _write_source_mets(
 
 def _build_resource(
     out_dir: Path, mets_file: Path, gt_file: Path, page_urn: str
-) -> cc.CorpusInput:
+) -> cc.CorpusPageInput:
     gt = cc.GroundtruthFile(
         identifier=page_urn,
         file_base_name=gt_file.stem,
@@ -101,7 +101,7 @@ def _build_resource(
         languages=["deu"],
     )
     # mets = cc.MetsResource(identifier_urn=page_urn, local_file_path=mets_file)
-    corpus_input = cc.CorpusInput(groundtruth_file=gt)
+    corpus_input = cc.CorpusPageInput(groundtruth_file=gt)
     corpus_input.cached_media_mets_file = mets_file
     return corpus_input
 
@@ -114,18 +114,18 @@ def _build_corpus_args(out_dir: Path, corpus_label: str = "Ground Truth Corpus")
         corpus_label=corpus_label,
     )
 
-def _patch_template_parse_with_struct_link():
-    original_parse = gc.ET.parse
+# def _patch_template_parse_with_struct_link():
+#     original_parse = gc.ET.parse
 
-    def parse_with_struct_link(source, *args, **kwargs):
-        tree = original_parse(source, *args, **kwargs)
-        if Path(str(source)).name == "template.corpus.xml":
-            struct_link = tree.getroot().find(f".//{METS_NS}structLink")
-            if struct_link is None:
-                gc.ET.SubElement(tree.getroot(), f"{METS_NS}structLink")
-        return tree
+#     def parse_with_struct_link(source, *args, **kwargs):
+#         tree = original_parse(source, *args, **kwargs)
+#         if Path(str(source)).name == "template.corpus.xml":
+#             struct_link = tree.getroot().find(f".//{METS_NS}structLink")
+#             if struct_link is None:
+#                 gc.ET.SubElement(tree.getroot(), f"{METS_NS}structLink")
+#         return tree
 
-    return parse_with_struct_link
+#     return parse_with_struct_link
 
 
 def test_mwe_corpus_file(
@@ -172,11 +172,10 @@ def test_mwe_corpus_file(
     ]
 
     monkeypatch.setattr(gc, "cc", cc, raising=False)
-    monkeypatch.setattr(gc.ET, "parse", _patch_template_parse_with_struct_link())
 
-    cfile = gc.CorpusFile(
-      corpus_args=_build_corpus_args(out_dir, corpus_label="Test Corpus"),
-      generator_resources=resources,
+    cfile = gc.Corpus(
+      cargs=_build_corpus_args(out_dir, corpus_label="Test Corpus"),
+      inputs=resources,
     )
     result = cfile.build()
 
@@ -189,7 +188,9 @@ def test_mwe_corpus_file(
     assert log_root is not None
     assert log_root.get("LABEL") == "Test Corpus"
 
-    assert len(document.findall(f'.//{METS_NS}dmdSec[@ID="DMDLOG_0001"]')) == 1
+    dmd_sections = document.findall(f'.//{METS_NS}dmdSec')
+    assert len(dmd_sections) == 1, "Expected exactly one dmdSec element"
+    assert dmd_sections[0].get('ID', "").startswith("DMDLOG_0001")
 
     phys_orders = [
         e.get("ORDER")
@@ -206,7 +207,7 @@ def test_mwe_corpus_file(
     assert phys_orders == ["1", "2"]
     assert log_orders == ["1", "2"]
 
-    fulltext_group = document.find(f'.//{METS_NS}fileGrp[@USE="{cc.GT_METS_FILEGROUP}"]')
+    fulltext_group = document.find(f'.//{METS_NS}fileGrp[@USE="{cc.GT_METS_FILEGROUP_FULLTEXT}"]')
     assert fulltext_group is not None
     assert len(fulltext_group.findall(f".//{METS_NS}file")) == 2
 
@@ -298,11 +299,10 @@ def test_corpus_with_multivolumes(
 
     resources = [_build_resource(out_dir, mets_file, gt_file, page_urn)]
     monkeypatch.setattr(gc, "cc", cc, raising=False)
-    monkeypatch.setattr(gc.ET, "parse", _patch_template_parse_with_struct_link())
 
-    generator = gc.CorpusFile(
-      corpus_args=_build_corpus_args(out_dir),
-      generator_resources=resources,
+    generator = gc.Corpus(
+      cargs=_build_corpus_args(out_dir),
+      inputs=resources,
     )
     
     # act
@@ -314,5 +314,4 @@ def test_corpus_with_multivolumes(
     doc_root = ET.parse(result.file_path).getroot()
     dmd_identifiers = doc_root.xpath('//mods:identifier/text()', namespaces={'mods': 'http://www.loc.gov/mods/v3'})
     assert dmd_identifiers is not None
-    assert len(dmd_identifiers) == 3
     assert ['9072299X', '190330430', 'urn:nbn:de:gbv:3:1-831022'] == dmd_identifiers

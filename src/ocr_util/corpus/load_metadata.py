@@ -23,18 +23,17 @@ import requests
 
 import ocr_util.corpus.common as cc
 
-
 DEFAULT_NBN_URL: typing.Final[str] = "https://nbn-resolving.org/"
 DEFAULT_REQUEST_HEADER = {"User-Agent": "ulbbot/ocr-util corpus (https://github.com/ulb-sachsen-anhalt/ocr-util)"}
 
 DEFAULT_OAI_BASE_URL_MAPPING = {
-    'opendata.uni-halle.de': 'https://opendata.uni-halle.de/oai/dd',
-    'opendata2.uni-halle.de': 'https://opendata2.uni-halle.de/oai/dd',
+    "opendata.uni-halle.de": "https://opendata.uni-halle.de/oai/dd",
+    "opendata2.uni-halle.de": "https://opendata2.uni-halle.de/oai/dd",
 }
 
 FALLBACK_IDX_BASE_URLS = {
     "https://opendata.uni-halle.de/solr/search/select",
-    "https://opendata2.uni-halle.de/solr/search/select"
+    "https://opendata2.uni-halle.de/solr/search/select",
 }
 
 DEFAULT_OAI_ID_PREFIX_HOST_MAPPING = {
@@ -51,6 +50,7 @@ class RecordResolutionResult:
         oai_record_urn: Repository handle in the form "<host>/<identifier>".
         source: Name of the strategy that produced the handle.
     """
+
     source: str
     oai_record_urn: str
 
@@ -231,8 +231,7 @@ class OaiPmhClient:
                 error_code = error.get("code", "unknown")
                 error_text = error.text or ""
                 raise cc.CorpusException(
-                    f"OAI-PMH error for identifier '{identifier}': "
-                    f"{error_code} - {error_text}"
+                    f"OAI-PMH error for identifier '{identifier}': " f"{error_code} - {error_text}"
                 )
         except ET.XMLSyntaxError as e:
             raise cc.CorpusException(f"Invalid XML response: {e} for {identifier}")
@@ -273,25 +272,19 @@ class RecordMetadataResolver:
     """
 
     def __init__(
-            self,
-            # urn: str,
-            # local_file_path: pathlib.Path,
-            oai_base_url: typing.Optional[str] = None,
-            handle_resolver: typing.Optional[HandleResolverChain] = None,
-            oai_client: typing.Optional[OaiPmhClient] = None,
+        self,
+        oai_base_url: typing.Optional[str] = None,
+        handle_resolver: typing.Optional[HandleResolverChain] = None,
+        oai_client: typing.Optional[OaiPmhClient] = None,
     ):
         """Create a resolver instance for one URN/file target.
 
         Args:
-            urn: URN of the source record.
-            local_file_path: Destination path for cached METS file.
             oai_base_url: Optional explicit OAI endpoint override.
             # url_urn_resolver: Base URL of NBN resolver.
             handle_resolver: Optional custom strategy chain (primarily for tests).
             oai_client: Optional custom OAI client implementation.
         """
-        # self.urn = urn
-        # self.file_path = local_file_path
         self.url_oai_pmh_data = oai_base_url
         self._handle_resolver = handle_resolver or HandleResolverChain(
             strategies=(
@@ -301,13 +294,12 @@ class RecordMetadataResolver:
         )
         self._oai_client = oai_client or OaiPmhClient()
 
-    def fetch(self, corpus_input: cc.CorpusInput, cache_path: pathlib.Path) -> cc.CorpusInput:
+    def fetch(self, corpus_input: cc.CorpusPageInput, cache_path: pathlib.Path) -> cc.CorpusPageInput:
         """Ensure METS file exists locally and return resulting ``CorpusInput``.
 
         The method is cache-aware: if the file already exists, no network calls are made.
         """
-        local_cache = cache_path.joinpath(f'{corpus_input.groundtruth_file.file_base_name}.mets.xml')
-        # file_path = corpus_input.mets_file
+        local_cache = cache_path.joinpath(f"{corpus_input.groundtruth_file.file_base_name}.mets.xml")
         if not local_cache.exists():
             resolution = self._handle_resolver.resolve_handle(corpus_input.identifier_urn)
             calculated_oai_host = resolution.oai_record_urn.split("/")[0]
@@ -323,15 +315,14 @@ class RecordMetadataResolver:
                 mets_file.write(mets_content)
         corpus_input.cached_media_mets_file = local_cache
         return corpus_input
-        # return cc.MetsResource(
-        #     identifier_urn=urn,
-        #     local_file_path=file_path
-        # )
 
 
-def wrap_request(url:str, timeout = 30,
-                 params: typing.Optional[typing.Dict[str, str]] = None,
-                 headers: typing.Optional[typing.Dict[str, str]] = None) -> typing.Optional[requests.Response]:
+def wrap_request(
+    url: str,
+    timeout=30,
+    params: typing.Optional[typing.Dict[str, str]] = None,
+    headers: typing.Optional[typing.Dict[str, str]] = None,
+) -> typing.Optional[requests.Response]:
     """Wrap requests in one single place"""
     response = None
     actual_headers = headers if headers is not None else {}
