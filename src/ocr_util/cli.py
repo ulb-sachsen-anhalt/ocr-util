@@ -200,6 +200,14 @@ def start() -> None:
         help="Execute calculations sequentially (default: False)",
     )
     evaluate_arg_parser.add_argument(
+        "--no-outliers",
+        dest="no_outliers",
+        action="store_true",
+        default=False,
+        required=False,
+        help="Disable outlier detection; report only raw statistics for every group (default: False)",
+    )
+    evaluate_arg_parser.add_argument(
         "-x",
         "--extra",
         required=False,

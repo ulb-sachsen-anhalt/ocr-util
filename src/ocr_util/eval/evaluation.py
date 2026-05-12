@@ -159,13 +159,15 @@ class Evaluator:
         RuntimeError: if candidates or reference data missing
     """
 
-    def __init__(self, root_candidates, verbosity=0, extras=None):
+    def __init__(self, root_candidates, verbosity=0, extras=None, strict_mode=False):
         """initiate new Evaluator
 
         Args:
             root_candidates (string|Path): Root domain/path to search for candidates
             verbosity (int, optional): Level of verbosity Defaults to 0.
             extras (_type_, optional): Implementation dependend. Defaults to None.
+            strict_mode (bool, optional): When True, outlier detection is disabled
+                and every group is reported using raw statistics only. Defaults to False.
         """
         self.domain_candidate = root_candidates
         self.domain_reference: typing.Optional[Path] = None
@@ -176,6 +178,7 @@ class Evaluator:
         self.evaluation_map = {}
         self.text_mode = extras == EVAL_EXTRA_IGNORE_GEOMETRY
         self.is_sequential = False
+        self.strict_mode = strict_mode
         self.metrics: typing.Sequence[digem.OCRMetric] = []
         self.evaluation_report = {}
 
@@ -327,7 +330,7 @@ class Evaluator:
                 evaluation_result.mean = mean
                 evaluation_result.median = median
                 evaluation_result.std = std
-                if std >= 1.0:
+                if not self.strict_mode and std >= 1.0:
                     stripped, _, _ = strip_outliers_from(data_tuples)
                     if len(stripped) < len(data_tuples):
                         regulars_data_points = [e[1] for e in stripped]

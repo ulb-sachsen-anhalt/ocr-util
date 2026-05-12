@@ -341,6 +341,7 @@ def start_evaluation(parse_args: typing.Dict):
     verbosity = parse_args["verbosity"]
     is_seq = parse_args["sequential"] if "sequential" in parse_args else False
     xtra = parse_args["extra"] if "extra" in parse_args else None
+    no_outliers = parse_args.get("no_outliers", False)
 
     if "language" in parse_args:
         digem.MetricDictionary.LANGUAGE = parse_args["language"]
@@ -451,6 +452,7 @@ def start_evaluation(parse_args: typing.Dict):
         evaluator_root,
         verbosity=verbosity,
         extras=xtra,
+        strict_mode=no_outliers,
     )
     evaluator.metrics = _initialize_metrics(metrics, norm=utf8norm)  # , calc=calc)
     if verbosity >= 1:
