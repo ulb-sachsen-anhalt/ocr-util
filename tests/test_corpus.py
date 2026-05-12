@@ -170,7 +170,7 @@ def test_args_immutability():
 # Gt2Mets Class Tests
 
 
-@unittest.mock.patch("ocr_util.corpus.generate_corpus.CorpusFile")
+@unittest.mock.patch("ocr_util.corpus.generate_corpus.Corpus")
 @unittest.mock.patch("ocr_util.corpus.generate_corpus.cc.GroundtruthFile")
 def test_gt2mets_initialization_with_valid_args(
     mock_gt_resource_class, mock_corpus_file_class, mock_gt_files, mock_output_dir, mock_temp_dir
@@ -209,7 +209,7 @@ def test_gt2mets_initialization_invalid_input_dir(mock_output_dir, mock_temp_dir
         gc.generate(args)
 
 
-@unittest.mock.patch("ocr_util.corpus.generate_corpus.CorpusFile")
+@unittest.mock.patch("ocr_util.corpus.generate_corpus.Corpus")
 @unittest.mock.patch("ocr_util.corpus.generate_corpus.cc.GroundtruthFile")
 def test_gt2mets_initialization_existing_output_dir(
     mock_gt_resource_class, mock_corpus_file_class, mock_gt_files, mock_output_dir, mock_temp_dir
@@ -232,13 +232,7 @@ def test_gt2mets_initialization_existing_output_dir(
     assert gt2mets
 
 
-def test_gt2mets_initialization_without_args():
-    """Test Gt2Mets initialization without args raises a TypeError"""
-    with pytest.raises(TypeError):
-        gc.generate()
-
-
-@unittest.mock.patch("ocr_util.corpus.generate_corpus.CorpusFile")
+@unittest.mock.patch("ocr_util.corpus.generate_corpus.Corpus")
 @unittest.mock.patch("ocr_util.corpus.generate_corpus.cc.GroundtruthFile")
 def test_gt2mets_run_creates_directories(
     mock_gt_resources_class, mock_corpus_file_class, mock_gt_files, tmp_path

@@ -10,16 +10,14 @@
     <mets:fileSec>
         <mets:fileGrp USE="GT-IMAGE">
         </mets:fileGrp>
-        <mets:fileGrp USE="FULLTEXT">
+        <mets:fileGrp USE="GT-FULLTEXT">
         </mets:fileGrp>
     </mets:fileSec>
     <mets:structMap TYPE="PHYSICAL">
-        <mets:div TYPE="physSequence" ID="physroot">
-        </mets:div>
+        <mets:div TYPE="physSequence" ID="physroot" />
     </mets:structMap>
     <mets:structMap TYPE="LOGICAL">
-        <mets:div ID="corpus_root" LABEL="Ground Truth Corpus" TYPE="document">
-        </mets:div>
+        <mets:div ID="corpus_root" LABEL="Ground Truth Corpus" TYPE="document" />
     </mets:structMap>
     <mets:structLink>
     </mets:structLink>

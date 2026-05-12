@@ -31,14 +31,14 @@ class DummyResponse:
         return self._payload
 
 
-def _build_corpus_input(tmp_path: Path, base_name: str = "sample") -> cc.CorpusInput:
+def _build_corpus_input(tmp_path: Path, base_name: str = "sample") -> cc.CorpusPageInput:
     gt_file = cc.GroundtruthFile(
         identifier="urn:nbn:de:3-1-23",
         file_base_name=base_name,
         file_path=tmp_path / f"{base_name}.xml",
         relative_file_path=Path(f"{base_name}.xml"),
     )
-    return cc.CorpusInput(gt_file)
+    return cc.CorpusPageInput(gt_file)
 
 
 @patch("ocr_util.corpus.load_metadata.requests.get")

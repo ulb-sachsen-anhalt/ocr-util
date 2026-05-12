@@ -2,6 +2,7 @@
 """OCR Utils"""
 
 import argparse
+import logging
 import os
 import re
 from pathlib import Path, PurePath
@@ -40,6 +41,12 @@ def points_type(points: str) -> str:
 
 
 def start() -> None:
+    # Configure logging once, centrally
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(levelname)s][%(name)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     arg_parser: argparse.ArgumentParser = argparse.ArgumentParser(
         prog="ocr",
     )
