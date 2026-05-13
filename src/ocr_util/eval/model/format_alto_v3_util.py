@@ -76,22 +76,26 @@ class FormatAltoV3Util:
 
     @staticmethod
     def __read_blocks(block_elements, parent):
-        _blocks = []
-        for _block_el in block_elements:
-            _block = DigitalObjectTree(
-                _block_el.getAttribute("ID"),
-                _block_el,
+        blocks = []
+        for block_el in block_elements:
+            a_block = DigitalObjectTree(
+                block_el.getAttribute("ID"),
+                block_el,
                 file_format=DigitalObjectTreeOCRFileFormat.ALTO_V3,
             )
-            _block.level = DigitalObjectLevel.REGION
-            _lines = _block_el.getElementsByTagName("TextLine")
-            if len(_lines) == 0:
-                raise RuntimeError(f"TextBlock@ID={_block.id} contains no lines!")
-            _block.parent = parent
-            _block.children = FormatAltoV3Util.__read_lines(_lines, _block)
-            _block.dimensions = FormatAltoV3Util.__extract_dimensions(_block_el)
-            _blocks.append(_block)
-        return _blocks
+            a_block.level = DigitalObjectLevel.REGION
+            block_lines = block_el.getElementsByTagName("TextLine")
+            if len(block_lines) == 0:
+                print(
+                    f"[WARN ] TextBlock@ID={a_block.id} contains no lines - empty page {parent.id}?"
+                )
+                a_block.children = []
+                continue
+            a_block.parent = parent
+            a_block.children = FormatAltoV3Util.__read_lines(block_lines, a_block)
+            a_block.dimensions = FormatAltoV3Util.__extract_dimensions(block_el)
+            blocks.append(a_block)
+        return blocks
 
     @staticmethod
     def __get_piece_subject(doc_root):
