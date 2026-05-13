@@ -242,6 +242,87 @@ def test_evaluate_set_with_5_entries(tmp_path):
     assert not results[1].cleared_result
 
 
+@pytest.mark.parametrize(
+    "weighted_mean,expected_mean",
+    [
+        (False, 70.0),
+        (True, (90.0 * 10 + 50.0 * 1000) / 1010),
+    ],
+)
+def test_eval_map_weighted_mean_switch(tmp_path, weighted_mean, expected_mean):
+    """Mean aggregation can switch between unweighted and weighted mode."""
+
+    path_dir_gt = tmp_path / "gt"
+    path_dir_gt.mkdir()
+    path_dir_c = tmp_path / "cand"
+    path_dir_c.mkdir()
+
+    evaluator = digev.Evaluator(path_dir_c, weighted_mean=weighted_mean)
+    evaluator.domain_reference = path_dir_gt
+
+    m1 = digem.MetricChars()
+    m1._value = 90.0
+    m1.data_reference = "t" * 10
+    m2 = digem.MetricChars()
+    m2._value = 50.0
+    m2.data_reference = "t" * 1000
+
+    e1 = digev.EvalEntry(path_dir_c / "grp" / "a.xml", path_dir_c / "grp")
+    e1.path_groundtruth = path_dir_gt / "grp" / "a.gt.xml"
+    e1.align_domains()
+    e1.metrics = [m1]
+
+    e2 = digev.EvalEntry(path_dir_c / "grp" / "b.xml", path_dir_c / "grp")
+    e2.path_groundtruth = path_dir_gt / "grp" / "b.gt.xml"
+    e2.align_domains()
+    e2.metrics = [m2]
+
+    evaluator.evaluation_entries = [e1, e2]
+    evaluator.aggregate(by_metrics=[0])
+    evaluator.eval_map()
+    results = evaluator.get_results()
+
+    assert len(results) == 1
+    assert results[0].mean == pytest.approx(expected_mean, rel=1e-6)
+
+
+def test_eval_map_weighted_mean_zero_refs_fallback(tmp_path):
+    """Weighted mode falls back to unweighted mean if total refs are zero."""
+
+    path_dir_gt = tmp_path / "gt"
+    path_dir_gt.mkdir()
+    path_dir_c = tmp_path / "cand"
+    path_dir_c.mkdir()
+
+    evaluator = digev.Evaluator(path_dir_c, weighted_mean=True)
+    evaluator.domain_reference = path_dir_gt
+
+    m1 = digem.MetricChars()
+    m1._value = 90.0
+    m1.data_reference = ""
+    m2 = digem.MetricChars()
+    m2._value = 50.0
+    m2.data_reference = ""
+
+    e1 = digev.EvalEntry(path_dir_c / "grp" / "a.xml", path_dir_c / "grp")
+    e1.path_groundtruth = path_dir_gt / "grp" / "a.gt.xml"
+    e1.align_domains()
+    e1.metrics = [m1]
+
+    e2 = digev.EvalEntry(path_dir_c / "grp" / "b.xml", path_dir_c / "grp")
+    e2.path_groundtruth = path_dir_gt / "grp" / "b.gt.xml"
+    e2.align_domains()
+    e2.metrics = [m2]
+
+    evaluator.evaluation_entries = [e1, e2]
+    evaluator.aggregate(by_metrics=[0])
+    evaluator.eval_map()
+    results = evaluator.get_results()
+
+    assert len(results) == 1
+    assert results[0].mean == pytest.approx(70.0, rel=1e-6)
+
+
 def test_no_groundtruth_at_all(tmp_path):
     """
     Behavior if no groundtruth found:

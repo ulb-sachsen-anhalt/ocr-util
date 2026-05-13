@@ -232,3 +232,43 @@ def test_digital_object_urn_nbn_de_gbv_spatium():
     assert text_line.dimensions == [[463, 492], [1583, 492], [1583, 532], [463, 532]]
 
 
+def test_warns_for_multiple_alto_pages(tmp_path, capsys):
+        """Warn and continue when ALTO contains multiple Page elements."""
+
+        alto_path = tmp_path / "multi_page_alto.xml"
+        alto_path.write_text(
+                """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<alto>
+    <Layout>
+        <Page ID=\"p1\" WIDTH=\"100\" HEIGHT=\"100\">
+            <PrintSpace>
+                <TextBlock ID=\"b1\" HPOS=\"0\" VPOS=\"0\" WIDTH=\"50\" HEIGHT=\"20\">
+                    <TextLine ID=\"l1\" HPOS=\"0\" VPOS=\"0\" WIDTH=\"50\" HEIGHT=\"20\">
+                        <String ID=\"s1\" HPOS=\"0\" VPOS=\"0\" WIDTH=\"10\" HEIGHT=\"10\" CONTENT=\"Hello\"/>
+                    </TextLine>
+                </TextBlock>
+            </PrintSpace>
+        </Page>
+        <Page ID=\"p2\" WIDTH=\"200\" HEIGHT=\"200\">
+            <PrintSpace>
+                <TextBlock ID=\"b2\" HPOS=\"0\" VPOS=\"0\" WIDTH=\"50\" HEIGHT=\"20\">
+                    <TextLine ID=\"l2\" HPOS=\"0\" VPOS=\"0\" WIDTH=\"50\" HEIGHT=\"20\">
+                        <String ID=\"s2\" HPOS=\"0\" VPOS=\"0\" WIDTH=\"10\" HEIGHT=\"10\" CONTENT=\"World\"/>
+                    </TextLine>
+                </TextBlock>
+            </PrintSpace>
+        </Page>
+    </Layout>
+</alto>
+""",
+                encoding="utf-8",
+        )
+
+        page_piece = to_digital_object(str(alto_path))
+        out = capsys.readouterr().out
+
+        assert "contains 2 Page elements" in out
+        assert "using first page only" in out
+        assert page_piece.id == "p1"
+
+

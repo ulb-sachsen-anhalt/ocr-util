@@ -159,7 +159,14 @@ class Evaluator:
         RuntimeError: if candidates or reference data missing
     """
 
-    def __init__(self, root_candidates, verbosity=0, extras=None, strict_mode=False):
+    def __init__(
+        self,
+        root_candidates,
+        verbosity=0,
+        extras=None,
+        strict_mode=False,
+        weighted_mean=False,
+    ):
         """initiate new Evaluator
 
         Args:
@@ -179,6 +186,7 @@ class Evaluator:
         self.text_mode = extras == EVAL_EXTRA_IGNORE_GEOMETRY
         self.is_sequential = False
         self.strict_mode = strict_mode
+        self.weighted_mean = weighted_mean
         self.metrics: typing.Sequence[digem.OCRMetric] = []
         self.evaluation_report = {}
 
@@ -327,7 +335,11 @@ class Evaluator:
             # also calculate statistics (mean, std)
             if len(data_points) > 1:
                 mean, std, median = get_statistics(data_points)
-                evaluation_result.mean = mean
+                evaluation_result.mean = (
+                    _mean_weighted(data_tuples)
+                    if self.weighted_mean
+                    else mean
+                )
                 evaluation_result.median = median
                 evaluation_result.std = std
                 if not self.strict_mode and std >= 1.0:
@@ -336,7 +348,11 @@ class Evaluator:
                         regulars_data_points = [e[1] for e in stripped]
                         clear_result = EvaluationResult(k, len(stripped))
                         mean2, std2, med2 = get_statistics(regulars_data_points)
-                        clear_result.mean = mean2
+                        clear_result.mean = (
+                            _mean_weighted(stripped)
+                            if self.weighted_mean
+                            else mean2
+                        )
                         clear_result.std = std2
                         clear_result.median = med2
                         clear_result.n_chars = sum([e[2] for e in stripped])
@@ -501,6 +517,23 @@ def get_statistics(data_points):
     the_deviation = np.std(data_points)
     the_median = np.median(data_points)
     return (the_mean, the_deviation, the_median)
+
+
+def _mean_weighted(data_tuples: typing.Sequence[typing.Tuple[Path, float, int]]) -> float:
+    """Weighted mean for (path, score, weight) tuples with safe fallback.
+
+    If sum(weights) is zero or negative, falls back to unweighted mean.
+    """
+
+    if not data_tuples:
+        return 0.0
+    weights = [e[2] for e in data_tuples]
+    values = [e[1] for e in data_tuples]
+    total_weight = sum(weights)
+    if total_weight <= 0:
+        return float(np.mean(values))
+    weighted_sum = sum(value * weight for value, weight in zip(values, weights))
+    return float(weighted_sum / total_weight)
 
 
 def strip_outliers_from(data_tuples, fence_ratio=1.5):

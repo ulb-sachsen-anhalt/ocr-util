@@ -18,7 +18,14 @@ class FormatAltoV3Util:
     def extract_data(path: str) -> DigitalObjectTree:
         document: Document = parse(path)
         doc_root: Element = document.documentElement
-        page_one: Element = doc_root.getElementsByTagName("Page")[0]
+        pages = doc_root.getElementsByTagName("Page")
+        if len(pages) < 1:
+            raise RuntimeError(f"Empty ALTO {doc_root} - no pages!")
+        if len(pages) > 1:
+            print(
+                f"[WARN ] ALTO '{path}' contains {len(pages)} Page elements; using first page only."
+            )
+        page_one: Element = pages[0]
         _page_width = int(page_one.getAttribute("WIDTH"))
         _page_height = int(page_one.getAttribute("HEIGHT"))
         _dimensions = [

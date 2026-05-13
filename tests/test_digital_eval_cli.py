@@ -302,3 +302,83 @@ def test_cli_with_legacy_invalid_mods_dimension_fails_early(cli_paths):
 
     assert excinfo.value.code == 1
 
+
+def test_cli_forwards_weighted_mean_flag(cli_paths, monkeypatch):
+    """CLI forwards weighted_mean flag to Evaluator constructor."""
+
+    observed = {}
+    original_evaluator = dig.digev.Evaluator
+
+    def _capture_evaluator(*args, **kwargs):
+        observed["weighted_mean"] = kwargs.get("weighted_mean", None)
+        return original_evaluator(*args, **kwargs)
+
+    monkeypatch.setattr(dig.digev, "Evaluator", _capture_evaluator)
+
+    cli_args = {
+        "candidates": cli_paths["candidate_dir"],
+        "reference": cli_paths["reference_dir"],
+        "metrics": "Cs",
+        "verbosity": 0,
+        "utf8": dig.DEFAULT_UTF8_NORM,
+        "sequential": True,
+        "weighted_mean": True,
+    }
+    results = dig.start_evaluation(cli_args)
+
+    assert len(results) > 0
+    assert observed["weighted_mean"] is True
+
+
+def test_start_parser_exposes_weighted_mean_flag(monkeypatch):
+    """Public CLI parser accepts --weighted-mean and forwards it in parsed args."""
+
+    captured = {}
+
+    def _capture_start_evaluation(args):
+        captured.update(args)
+        return []
+
+    monkeypatch.setattr(dig, "start_evaluation", _capture_start_evaluation)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "ocr-util-eval",
+            "dummy_candidates",
+            "--weighted-mean",
+        ],
+    )
+
+    dig.start()
+
+    assert captured["candidates"] == "dummy_candidates"
+    assert captured["weighted_mean"] is True
+
+
+def test_top_level_ocr_eval_parser_exposes_weighted_mean(monkeypatch):
+    """Top-level `ocr eval` parser accepts and forwards --weighted-mean."""
+
+    import ocr_util.cli as ou_cli
+
+    captured = {}
+
+    def _capture_start_evaluation(args):
+        captured.update(args)
+        return []
+
+    monkeypatch.setattr(ou_cli.eval_cli, "start_evaluation", _capture_start_evaluation)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "ocr",
+            "eval",
+            "dummy_candidates",
+            "--weighted-mean",
+        ],
+    )
+
+    ou_cli.start()
+
+    assert captured["candidates"] == "dummy_candidates"
+    assert captured["weighted_mean"] is True
+

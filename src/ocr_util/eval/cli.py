@@ -342,6 +342,7 @@ def start_evaluation(parse_args: typing.Dict):
     is_seq = parse_args["sequential"] if "sequential" in parse_args else False
     xtra = parse_args["extra"] if "extra" in parse_args else None
     no_outliers = parse_args.get("no_outliers", False)
+    weighted_mean = parse_args.get("weighted_mean", False)
 
     if "language" in parse_args:
         digem.MetricDictionary.LANGUAGE = parse_args["language"]
@@ -453,6 +454,7 @@ def start_evaluation(parse_args: typing.Dict):
         verbosity=verbosity,
         extras=xtra,
         strict_mode=no_outliers,
+        weighted_mean=weighted_mean,
     )
     evaluator.metrics = _initialize_metrics(metrics, norm=utf8norm)  # , calc=calc)
     if verbosity >= 1:
@@ -519,9 +521,14 @@ def start_evaluation(parse_args: typing.Dict):
     return eval_results
 
 
-def start():
-    """Wrap argparsing"""
-    parser = argparse.ArgumentParser(description=f"OCR Utils {ocr_util.__version__}")
+def register_arguments(parser: argparse.ArgumentParser) -> None:
+    """Register eval subcommand arguments on any argparse parser.
+
+    This function is the single source of truth for eval CLI arguments and is
+    used by both the standalone eval entrypoint and the top-level `ocr eval`
+    subcommand wiring.
+    """
+
     parser.add_argument(
         "candidates",
         help="Root Directory for evaluation candidates / Path to single candidate file",
@@ -558,6 +565,14 @@ def start():
         action="store_true",
         required=False,
         help="Execute calculations sequentially (optional; default: 'False')",
+    )
+    parser.add_argument(
+        "--no-outliers",
+        dest="no_outliers",
+        action="store_true",
+        default=False,
+        required=False,
+        help="Disable outlier detection; report only raw statistics for every group (default: False)",
     )
     parser.add_argument(
         "-x",
@@ -601,6 +616,18 @@ def start():
         f"Available: {', '.join(MODS_DIMENSION_XPATHS.keys())}. "
         f"Or provide custom XPath expressions starting with './/'",
     )
+    parser.add_argument(
+        "--weighted-mean",
+        action="store_true",
+        required=False,
+        help="Use weighted mean for summary statistics (weights = number of GT references per data point). Default: False",
+    )
+
+
+def start():
+    """Wrap argparsing"""
+    parser = argparse.ArgumentParser(description=f"OCR Utils {ocr_util.__version__}")
+    register_arguments(parser)
     main_args = vars(parser.parse_args())
     start_evaluation(main_args)
 
