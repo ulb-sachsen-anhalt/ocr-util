@@ -60,6 +60,7 @@ MODS_DIMENSION_XPATHS = {
     "author": ".//mods:name/mods:namePart",
     "subject": ".//mods:subject/mods:topic",
     "classification": ".//mods:classification",
+    "accessCondition": ".//mods:accessCondition",
 }
 
 

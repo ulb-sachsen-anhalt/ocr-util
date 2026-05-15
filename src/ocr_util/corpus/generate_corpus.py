@@ -16,9 +16,6 @@ Typical call chain
    shared corpus METS document built from a template.
 4. The finished METS document is written to the output directory.
 
-Can also be run as a standalone script::
-
-    python generate_corpus.py <input_dir> <output_dir> [-l LIMIT] [-t TEMP_DIR]
 """
 
 import argparse
@@ -38,7 +35,7 @@ import ocr_util.corpus.load_metadata as lr
 
 CPUS = os.cpu_count() or 1
 NUM_THREADS: typing.Final[int] = math.ceil(CPUS * 0.85)
-DEFAULT_TEMP_DIR = pathlib.Path.home().joinpath(".cache", "odem_gt_2_mets")
+DEFAULT_TEMP_DIR = pathlib.Path.home().joinpath(".cache", "ocr_util_corpus_metadata")
 DEFAULT_LIMIT = 0
 
 logger = logging.getLogger(__name__)
@@ -67,13 +64,13 @@ class Corpus:
         self.corpus_template = template_path
         self.kwargs = kwargs
         self.corpus_label = self.__cargs.corpus_label
-        self.file = cc.MetsCorpusFile(template_path, corpus_label=self.corpus_label, **kwargs)
+        self.corpus_file = cc.MetsCorpusFile(template_path, corpus_label=self.corpus_label, **kwargs)
 
     def build(self) -> cc.CorpusGeneratorResult:
         """Build the corpus by extracting data from original METS files and write new METS file."""
 
         total: int = len(self.__inputs)
-        assert self.file is not None, "Corpus template must be set before start building corpus"
+        assert self.corpus_file is not None, "Corpus template must be set before start building corpus"
         for idx, page_input in enumerate(self.__inputs, 1):
             logger.info("[%d/%d] Process file with identifier %s", idx, total, page_input.identifier_urn)
             try:
@@ -87,7 +84,7 @@ class Corpus:
                     out_dir=self.__out_dir,
                     gt_file_path=page_input.groundtruth_file.file_path,
                 )
-                self.file.attach(the_section)
+                self.corpus_file.attach(the_section)
             except Exception as exc:
                 logger.exception(
                     "Error processing %s: %s - skip file",
@@ -95,8 +92,8 @@ class Corpus:
                     exc,
                 )
         # re-sort pages
-        self.file.finalize()
-        out_path = self.file.write(self.__out_dir)
+        self.corpus_file.finalize()
+        out_path = self.corpus_file.write(self.__out_dir)
         return cc.CorpusGeneratorResult(file_path=out_path, n_pages=len(self.__inputs))
 
 

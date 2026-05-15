@@ -74,7 +74,6 @@ class CorpusArgs:
     input_dir: pathlib.Path
     output_dir: pathlib.Path
     local_cache_dir: pathlib.Path
-    # oai_base_urls:str
     limit: int = 0
     clear_cache: bool = False
     corpus_label: str = "Ground Truth Corpus"
@@ -458,6 +457,9 @@ class MetsResourceFile(MetsFile):
         publication_info = source_mods_root.find('mods:originInfo[@eventType="publication"]', self.nsmap)
         if publication_info is not None:
             copy_root.append(publication_info)
+        access_info = source_mods_root.find("mods:accessCondition", self.nsmap)
+        if access_info is not None:
+            copy_root.append(access_info)
         return copy_dmd_sec
 
     def _reindex(self, section: MetsModsSection) -> None:
