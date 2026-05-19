@@ -36,10 +36,6 @@ FALLBACK_IDX_BASE_URLS = {
     "https://opendata2.uni-halle.de/solr/search/select",
 }
 
-DEFAULT_OAI_ID_PREFIX_HOST_MAPPING = {
-    "https://opendata.uni-halle.de/oai/dd": "opendata.uni-halle.de",
-    "https://opendata2.uni-halle.de/oai/dd": "opendata2.uni-halle.de",
-}
 
 
 @dataclasses.dataclass(frozen=True)
@@ -250,16 +246,6 @@ def _resolve_oai_base_url(host: str, explicit_oai_base_url: typing.Optional[str]
     if host in DEFAULT_OAI_BASE_URL_MAPPING:
         return DEFAULT_OAI_BASE_URL_MAPPING[host]
     raise cc.CorpusException("Unable to determine OAI-PMH base URL")
-
-
-def _oai_identifier_prefix_host(oai_base_url: str) -> str:
-    """Derive host part for OAI identifier prefix from a base URL."""
-    if oai_base_url in DEFAULT_OAI_ID_PREFIX_HOST_MAPPING:
-        return DEFAULT_OAI_ID_PREFIX_HOST_MAPPING[oai_base_url]
-    parsed = urllib.parse.urlparse(oai_base_url)
-    if parsed.netloc:
-        return parsed.netloc
-    raise cc.CorpusException(f"Unable to derive OAI identifier prefix host from '{oai_base_url}'")
 
 
 class RecordMetadataResolver:
