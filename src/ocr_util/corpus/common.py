@@ -422,7 +422,7 @@ class MetsResourceFile(MetsFile):
 
     def _build_dmd_section(self, source_dmd_sec: ET._Element) -> ET._Element:
 
-        source_mods_root = source_dmd_sec.find(f".//mods:mods", self.nsmap)
+        source_mods_root = source_dmd_sec.find(".//mods:mods", self.nsmap)
         assert source_mods_root is not None, f"no MODS root in DMD section with ID='{source_dmd_sec.get('ID')}' found"
         identifer_elements: list[ET._Element] = source_mods_root.findall("mods:identifier", self.nsmap)
         identifer_urn: typing.List[str] = [i.text for i in identifer_elements if i.get("type") == "urn"]
