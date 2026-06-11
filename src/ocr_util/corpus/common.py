@@ -340,6 +340,9 @@ class MetsResourceFile(MetsFile):
         assert log_id is not None, f"log ID for smLink with to='{source_phys_id}' not found"
         log_div = the_root.find(f'.//mets:div[@ID="{log_id}"]', self.nsmap)
         assert log_div is not None, f"log div with ID='{log_id}' not found"
+        # clean up logical div: remove attributes like "AMDID", remove all child elements
+        if log_div.get("AMDID") is not None:
+            log_div.attrib.pop("AMDID")
         for child in log_div.getchildren():
             child.getparent().remove(child)
         # fix current DMDID for identifier calculation
@@ -397,28 +400,41 @@ class MetsResourceFile(MetsFile):
                 )
                 file_image.set("ID", new_id)
                 fp.set("FILEID", new_id)
-                file_ptr_image = fp
-                page_div.append(file_ptr_image)
+                page_div.append(fp)
             elif the_group == self.label_fgroup_fulltext:
                 file_ptr_fulltext = ET.Element(f'{{{self.nsmap["mets"]}}}fptr', attrib={"FILEID": new_id})
                 page_div.append(file_ptr_fulltext)
-                file_fulltext = ET.Element(
-                    f'{{{self.nsmap["mets"]}}}file', attrib={"ID": new_id, "MIMETYPE": "application/vnd.prima.page+xml"}
-                )
-                file_fulltext.append(
-                    ET.Element(
-                        f'{{{self.nsmap["mets"]}}}FLocat',
-                        attrib={
-                            f'{{{self.nsmap["xlink"]}}}href': str(gt_file_path.relative_to(out_dir)),
-                            "LOCTYPE": "OTHER",
-                            "OTHERLOCTYPE": "FILE",
-                        },
-                    )
-                )
+                file_fulltext = self._create_fulltext_element(new_id, gt_file_path, out_dir)
+        # if no file pointer for fulltext exists, generate it since print may do not possess
+        if file_fulltext is None:
+            new_id = f"{self.label_fgroup_fulltext}-{(self.idx):04d}"
+            file_fulltext = self._create_fulltext_element(new_id, gt_file_path, out_dir)
+            file_ptr_fulltext = ET.Element(f'{{{self.nsmap["mets"]}}}fptr', attrib={"FILEID": new_id})
+            page_div.append(file_ptr_fulltext)
+
         page_urn = page_div.get("CONTENTIDS")
         assert file_image is not None, f"No image file pointer for page with CONTENTIDS='{page_urn}'"
         assert file_fulltext is not None, f"No fulltext file pointer for page with CONTENTIDS='{page_urn}'"
         return file_image, file_fulltext
+
+
+    def _create_fulltext_element(self, new_id: str, gt_file_path: pathlib.Path,
+                                 out_dir: pathlib.Path) -> ET._Element:
+        """Create a new file element for the fulltext file with the appropriate FLocat child."""
+        file_fulltext = ET.Element(
+            f'{{{self.nsmap["mets"]}}}file', attrib={"ID": new_id, "MIMETYPE": "application/vnd.prima.page+xml"}
+        )
+        file_fulltext.append(
+            ET.Element(
+                f'{{{self.nsmap["mets"]}}}FLocat',
+                attrib={
+                    f'{{{self.nsmap["xlink"]}}}href': str(gt_file_path.relative_to(out_dir)),
+                    "LOCTYPE": "OTHER",
+                    "OTHERLOCTYPE": "FILE",
+                },
+            )
+        )
+        return file_fulltext
 
     def _build_dmd_section(self, source_dmd_sec: ET._Element) -> ET._Element:
 
