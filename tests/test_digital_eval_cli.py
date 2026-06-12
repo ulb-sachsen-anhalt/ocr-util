@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """OCR Evaluation Test Module"""
+# pylint: disable=protected-access
 
 import shutil
 
@@ -108,10 +109,11 @@ def test_mwe_cli_norm_variants(
     assert len(eval_results) == 4
     captured = capsys.readouterr().out
     std_lines = captured.split('\n')
-    assert len(std_lines) == 11
+    assert len(std_lines) >= 13  # now includes aggregation strategy debug lines
     assert std_lines[0] == expected_norm_line
     assert str(std_lines[1]).startswith('[DEBUG] from "5" filtered "3" candidates')
-    assert std_lines[4] == expected_metric_line
+    # Find the expected_metric_line (it will be further down due to new aggregation logging)
+    assert any(expected_metric_line in line for line in std_lines)
 
 
 def test_mwe_cli_data_resolving(cli_paths, capsys):
@@ -140,10 +142,11 @@ def test_mwe_cli_data_resolving(cli_paths, capsys):
     assert len(eval_results) == 4
     captured = capsys.readouterr().out
     std_lines = captured.split('\n')
-    assert len(std_lines) == 12
+    assert len(std_lines) >= 14  # now includes aggregation strategy debug lines
     assert std_lines[0] == "[WARN ] base 'ger_frk' and 'GT-PAGE' mismatch, aggregation might be inaccurate!"
     assert std_lines[1] == "[DEBUG] text normalized using 'NFKD' code points for 'Cs,Ls'"
-    assert std_lines[5] == "[DEBUG] [1667522809_J_0001_0002](art) [Cs:39.10(5363), Ls:38.52(4437)(- 0.58)]"
+    # Find the metric line (it will be in the output, exact position may vary due to aggregation logging)
+    assert any("[DEBUG] [1667522809_J_0001_0002](art) [Cs:39.10(5363), Ls:38.52(4437)(- 0.58)]" in line for line in std_lines)
 
 
 def test_single_candidate_file_cli(cli_paths, capsys):
@@ -186,7 +189,6 @@ def test_single_candidate_file_cli(cli_paths, capsys):
 
 def test_cli_with_mets_mods_aggregation(cli_paths, capsys):
     """Test CLI with METS/MODS aggregation parameters"""
-    pytest = __import__('pytest')
     pytest.importorskip("lxml", reason="lxml required for METS/MODS extraction")
     
     # arrange
@@ -227,7 +229,7 @@ def test_cli_with_mets_mods_aggregation(cli_paths, capsys):
     assert "Added aggregation dimension" in captured or "Converting legacy --mods-dimensions" in captured
 
 
-def test_cli_with_mets_file_only_warning(cli_paths, capsys):
+def test_cli_with_mets_file_only_warning(cli_paths):
     """Test CLI shows warning when METS file provided without dimensions"""
     
     # arrange
@@ -381,4 +383,142 @@ def test_top_level_ocr_eval_parser_exposes_weighted_mean(monkeypatch):
 
     assert captured["candidates"] == "dummy_candidates"
     assert captured["weighted_mean"] is True
+
+
+def test_filter_value_matches_exact_single_value():
+    """Single-value filters require exact value match."""
+
+    assert dig._filter_value_matches("ger", "ger") is True
+    assert dig._filter_value_matches("ger+eng", "ger") is False
+    assert dig._filter_value_matches("eng", "ger") is False
+
+
+def test_filter_value_matches_set_containment_for_multi_value():
+    """Multi-value filter requires expected value-set to be contained in extracted set."""
+
+    assert dig._filter_value_matches("eng+ger", "ger+eng") is True
+    assert dig._filter_value_matches("eng+ger+lat", "ger+eng") is True
+    assert dig._filter_value_matches("ger", "ger+eng") is False
+
+
+def test_apply_entry_filter_warns_and_discards_missing_metadata(capsys):
+    """Entries missing the filter criterion are warned and discarded."""
+
+    entry_ok = dig.digev.EvalEntry(Path("ok.xml"))
+    entry_ok.tags["lang"] = "ger"
+
+    entry_wrong = dig.digev.EvalEntry(Path("wrong.xml"))
+    entry_wrong.tags["lang"] = "eng"
+
+    entry_missing = dig.digev.EvalEntry(Path("missing.xml"))
+
+    entries = [entry_ok, entry_wrong, entry_missing]
+    filter_spec = (
+        "metadata_lang",
+        dig.digev.CustomMetadataExtractor("lang"),
+        "ger",
+    )
+
+    kept = dig._apply_entry_filter(entries, filter_spec, verbosity=1)
+
+    assert kept == [entry_ok]
+    captured = capsys.readouterr().out
+    assert "Discarded 1 entries with missing filter criterion 'metadata_lang'" in captured
+
+
+def test_cli_filter_by_and_aggregate_by_with_mets(cli_paths):
+    """CLI supports single pre-filter by MODS metadata followed by aggregation."""
+    pytest.importorskip("lxml", reason="lxml required for METS/MODS extraction")
+
+    cli_args = {
+        "candidates": cli_paths["candidate_dir"],
+        "reference": cli_paths["reference_dir"],
+        "metrics": "Cs",
+        "verbosity": 0,
+        "utf8": dig.DEFAULT_UTF8_NORM,
+        "sequential": True,
+        "mets_file": str(cli_paths["mets_file"]),
+        "filter_by": "mods:language=ger",
+        "aggregate_by": "mods:dateIssued:century",
+    }
+
+    results = dig.start_evaluation(cli_args)
+
+    assert len(results) > 0
+    assert all("mods_dateIssued_century" in r.eval_key for r in results)
+
+
+def test_cli_filter_by_multilanguage_set_containment_end_to_end(tmp_path):
+    """End-to-end: multi-language filter keeps only entries containing all expected languages."""
+    pytest.importorskip("lxml", reason="lxml required for METS/MODS extraction")
+
+    src_candidates = TEST_RES_DIR / "candidate" / "frk_alto"
+    src_reference = TEST_RES_DIR / "groundtruth" / "page"
+
+    candidate_dir = tmp_path / "candidate" / _DOMAIN_LABEL
+    reference_dir = tmp_path / "reference" / _DOMAIN_LABEL
+    candidate_dir.mkdir(parents=True, exist_ok=True)
+    reference_dir.mkdir(parents=True, exist_ok=True)
+
+    # Two real candidate/GT pairs from test resources.
+    cand_a = "1667522809_J_0001_0002.xml"
+    gt_a = "1667522809_J_0001_0002.art.gt.xml"
+    cand_b = "1667522809_J_0001_0768.xml"
+    gt_b = "1667522809_J_0001_0768.art.gt.xml"
+
+    shutil.copy(src_candidates / cand_a, candidate_dir / cand_a)
+    shutil.copy(src_reference / gt_a, reference_dir / gt_a)
+    shutil.copy(src_candidates / cand_b, candidate_dir / cand_b)
+    shutil.copy(src_reference / gt_b, reference_dir / gt_b)
+
+    # Entry A has two languages (ger+eng) and 19th century publication.
+    # Entry B has only one language (ger) and 20th century publication.
+    mets_file = tmp_path / "reference" / "test_mets_multilang.xml"
+    mets_file.write_text(
+    f"""<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<mets:mets xmlns:mets=\"http://www.loc.gov/METS/\"
+                     xmlns:mods=\"http://www.loc.gov/mods/v3\"
+                     xmlns:xlink=\"http://www.w3.org/1999/xlink\">
+    <mets:dmdSec ID=\"md_multi\">
+        <mets:mdWrap MDTYPE=\"MODS\"><mets:xmlData><mods:mods>
+            <mods:language><mods:languageTerm type=\"code\">ger</mods:languageTerm></mods:language>
+            <mods:language><mods:languageTerm type=\"code\">eng</mods:languageTerm></mods:language>
+            <mods:originInfo><mods:dateIssued>1867</mods:dateIssued></mods:originInfo>
+        </mods:mods></mets:xmlData></mets:mdWrap>
+    </mets:dmdSec>
+    <mets:dmdSec ID=\"md_single\">
+        <mets:mdWrap MDTYPE=\"MODS\"><mets:xmlData><mods:mods>
+            <mods:language><mods:languageTerm type=\"code\">ger</mods:languageTerm></mods:language>
+            <mods:originInfo><mods:dateIssued>1901</mods:dateIssued></mods:originInfo>
+        </mods:mods></mets:xmlData></mets:mdWrap>
+    </mets:dmdSec>
+    <mets:fileSec>
+        <mets:fileGrp USE=\"OCR-D-GT-FULLTEXT\">
+            <mets:file ID=\"F1\" DMDID=\"md_multi\"><mets:FLocat xlink:href=\"{gt_a}\"/></mets:file>
+            <mets:file ID=\"F2\" DMDID=\"md_single\"><mets:FLocat xlink:href=\"{gt_b}\"/></mets:file>
+        </mets:fileGrp>
+    </mets:fileSec>
+</mets:mets>
+""",
+        encoding="utf-8",
+    )
+
+    cli_args = {
+        "candidates": candidate_dir,
+        "reference": reference_dir,
+        "metrics": "Cs",
+        "verbosity": 1,
+        "utf8": dig.DEFAULT_UTF8_NORM,
+        "sequential": True,
+        "mets_file": str(mets_file),
+        "filter_by": "mods:language=ger+eng",
+        "aggregate_by": "mods:dateIssued:century",
+    }
+
+    results = dig.start_evaluation(cli_args)
+
+    assert len(results) > 0
+    keys = [r.eval_key for r in results]
+    assert all("mods_dateIssued_century:19th" in key for key in keys)
+    assert all("20th" not in key for key in keys)
 

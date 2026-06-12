@@ -38,6 +38,35 @@ Inconsistent OCR Groundtruth with empty texts (ALTO String elements missing CONT
 _Please note_:  
 Invalid data files are tried(!) to be excluded from evaluation.
 
+### Evaluation Filter-Then-Aggregate
+
+The evaluation CLI supports a single pre-aggregation filter using metadata extractors.
+
+Example: keep only entries where MODS language is exactly German, then aggregate by publication century:
+
+```bash
+ocr eval <candidates> \
+	--reference <groundtruth> \
+	--mets-file <mets.xml> \
+	--filter-by "mods:language=ger" \
+	--aggregate-by "mods:dateIssued:century"
+```
+
+Multi-language filter values are interpreted as sets:
+
+```bash
+ocr eval <candidates> \
+	--reference <groundtruth> \
+	--mets-file <mets.xml> \
+	--filter-by "mods:language=ger+eng" \
+	--aggregate-by "mods:dateIssued:century"
+```
+
+Behavior:
+* single filter value -> exact match (e.g. `ger` does not match `ger+eng`)
+* multi-value filter -> all filter values must be present in any order
+* entries missing the filter criterion are reported as WARNING and discarded
+
 ## Development
 
 Plattform: Intel(R) Core(TM) i5-6500 CPU@3.20GHz, 16GB RAM, Ubuntu 22.04 LTS, Python 3.10+

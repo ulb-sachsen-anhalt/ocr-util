@@ -2,6 +2,7 @@
 """OCR QA Evaluation CLI"""
 
 import argparse
+import re
 import sys
 import typing
 
@@ -62,6 +63,137 @@ MODS_DIMENSION_XPATHS = {
     "classification": ".//mods:classification",
     "accessCondition": ".//mods:accessCondition",
 }
+
+_FILTER_MULTI_VALUE_PATTERN = re.compile(r"[+|,]")
+
+
+def _split_filter_tokens(value: str) -> typing.Set[str]:
+    """Split a metadata value into normalized tokens for set-based matching.
+
+    Token separators: '+', '|', ',' (commonly used for multi-value metadata).
+    """
+    if value is None:
+        return set()
+    return {token.strip() for token in re.split(r"[+|,]", str(value)) if token.strip()}
+
+
+def _filter_value_matches(actual_value: str, expected_value: str) -> bool:
+    """Match actual value against expected filter value.
+
+    Matching semantics:
+    * If expected value is single-valued, require exact string equality.
+    * If expected value is multi-valued (contains '+', '|' or ','),
+      treat both values as sets and require expected ⊆ actual.
+    """
+    expected = expected_value.strip()
+    actual = str(actual_value).strip()
+
+    # Exact mode for a single provided value.
+    if not _FILTER_MULTI_VALUE_PATTERN.search(expected):
+        return actual == expected
+
+    # Set mode for multi-valued filters.
+    expected_tokens = _split_filter_tokens(expected)
+    actual_tokens = _split_filter_tokens(actual)
+    return bool(expected_tokens) and expected_tokens.issubset(actual_tokens)
+
+
+def _build_filter_spec(
+    filter_by: typing.Optional[str],
+    mets_path: typing.Optional[Path],
+    strict: bool = False,
+    verbosity: int = 0,
+) -> typing.Optional[typing.Tuple[str, typing.Callable, str]]:
+    """Build single filter spec from CLI string.
+
+    Supported format:
+      <extractor_spec>=<expected_value>
+
+    Example:
+      mods:language=ger
+      mods:language=ger+eng
+    """
+    if not filter_by:
+        return None
+
+    if "=" not in filter_by:
+        msg = (
+            "Invalid --filter-by format. Expected '<extractor_spec>=<value>', "
+            f"got '{filter_by}'"
+        )
+        if strict:
+            raise ValueError(msg)
+        print(f"[WARN ] {msg}")
+        return None
+
+    extractor_spec, expected_value = filter_by.split("=", 1)
+    extractor_spec = extractor_spec.strip()
+    expected_value = expected_value.strip()
+
+    if not extractor_spec or not expected_value:
+        msg = (
+            "Invalid --filter-by format. Both extractor and value are required, "
+            f"got '{filter_by}'"
+        )
+        if strict:
+            raise ValueError(msg)
+        print(f"[WARN ] {msg}")
+        return None
+
+    parsed = _parse_extractor_spec(extractor_spec, mets_path, verbosity)
+    if parsed is None:
+        msg = f"Invalid --filter-by extractor specification: '{extractor_spec}'"
+        if strict:
+            raise ValueError(msg)
+        print(f"[WARN ] {msg}")
+        return None
+
+    dim_name, extractor = parsed
+    return (dim_name, extractor, expected_value)
+
+
+def _apply_entry_filter(
+    entries: typing.List[digev.EvalEntry],
+    filter_spec: typing.Tuple[str, typing.Callable, str],
+    verbosity: int = 0,
+) -> typing.List[digev.EvalEntry]:
+    """Filter entries by one metadata criterion.
+
+    Entries with missing filter value are discarded and reported as WARNING.
+    """
+    dim_name, extractor, expected_value = filter_spec
+    kept: typing.List[digev.EvalEntry] = []
+    missing_value_entries: typing.List[digev.EvalEntry] = []
+    n_filtered_out = 0
+
+    for entry in entries:
+        extracted = extractor(entry)
+
+        # Missing criterion: warn + discard.
+        if extracted is None or str(extracted).strip() == "":
+            missing_value_entries.append(entry)
+            continue
+
+        if _filter_value_matches(str(extracted), expected_value):
+            kept.append(entry)
+        else:
+            n_filtered_out += 1
+
+    if missing_value_entries:
+        print(
+            f"[WARN ] Discarded {len(missing_value_entries)} entries with missing filter criterion '{dim_name}'"
+        )
+        if verbosity >= 2:
+            for miss in missing_value_entries[:5]:
+                print(f"[WARN ] missing '{dim_name}' for '{miss.path_candidate}'")
+
+    if verbosity >= 1:
+        print(
+            f"[DEBUG] Filter '{dim_name}={expected_value}' kept {len(kept)} of {len(entries)} entries "
+            f"(non-matching: {n_filtered_out}, missing: {len(missing_value_entries)})"
+        )
+
+    return kept
 
 
 def _parse_extractor_spec(
@@ -390,6 +522,7 @@ def start_evaluation(parse_args: typing.Dict):
 
     # --- Validate aggregation strategy before any expensive work ---
     aggregate_by = parse_args.get("aggregate_by")
+    filter_by = parse_args.get("filter_by")
     mets_file = parse_args.get("mets_file")
     mods_dimensions = parse_args.get("mods_dimensions")
 
@@ -404,6 +537,7 @@ def start_evaluation(parse_args: typing.Dict):
     # Build and validate aggregation strategy; always strict so any bad spec
     # aborts before evaluation starts.
     strategy = None
+    filter_spec = None
     if aggregate_by:
         try:
             strategy = _build_aggregation_strategy(
@@ -444,6 +578,20 @@ def start_evaluation(parse_args: typing.Dict):
             print(
                 "[WARN ] No valid MODS dimensions provided. Using default aggregation."
             )
+
+    # Build and validate single-entry filter; always strict so invalid specs
+    # abort before evaluation starts.
+    if filter_by:
+        try:
+            filter_spec = _build_filter_spec(
+                filter_by,
+                mets_path,
+                strict=True,
+                verbosity=verbosity,
+            )
+        except ValueError as err:
+            print(f"[ERROR] {err}. exit!")
+            sys.exit(1)
 
     # create basic evaluator instance
     # If a single file is passed, use its parent directory as the root
@@ -492,18 +640,53 @@ def start_evaluation(parse_args: typing.Dict):
             f'[DEBUG] from "{n_entries}" filtered "{n_diff}" candidates missing groundtruth{rnd_str}'
         )
 
+    # Optional metadata/value filter stage before expensive metric evaluation.
+    if filter_spec:
+        n_before_filter = len(gt_entries)
+        filter_dim_name, _, filter_value = filter_spec
+        if verbosity >= 1:
+            print(
+                f"[DEBUG] Applying filter: {filter_dim_name}={filter_value} on {n_before_filter} entries"
+            )
+        gt_entries = _apply_entry_filter(gt_entries, filter_spec, verbosity=verbosity)
+        n_after_filter = len(gt_entries)
+        n_filtered_out = n_before_filter - n_after_filter
+        pct_filtered = (
+            100.0 * n_filtered_out / n_before_filter if n_before_filter > 0 else 0
+        )
+        print(
+            f"[INFO ] Filter '{filter_dim_name}={filter_value}' result: {n_after_filter}/{n_before_filter} entries "
+            f"({pct_filtered:.1f}% filtered out)"
+        )
+        if len(gt_entries) == 0:
+            print("[WARN ] No entries left after applying filter. exit.")
+            sys.exit(0)
+
     # trigger actual evaluation
     evaluator.eval_all(gt_entries)
 
     # Apply aggregation strategy
     if strategy:
-        evaluator.aggregate_generic(strategy)
         if verbosity >= 1:
             dim_names = [dim.name for dim in strategy.dimensions]
-            print(f"[DEBUG] Aggregated by dimensions: {', '.join(dim_names)}")
+            hierarchical_str = "(hierarchical)" if strategy.hierarchical else "(flat)"
+            print(
+                f"[DEBUG] Aggregating by {len(strategy.dimensions)} dimension(s) {hierarchical_str}: {', '.join(dim_names)}"
+            )
+        evaluator.aggregate_generic(strategy)
+        if verbosity >= 1:
+            print(
+                f"[DEBUG] Aggregation complete: {len(evaluator.evaluation_map)} aggregation keys generated"
+            )
     else:
         # Use default aggregation (backward compatible)
+        if verbosity >= 1:
+            print("[DEBUG] Using default aggregation strategy (directory hierarchy + type)")
         evaluator.aggregate(by_type=True)
+        if verbosity >= 1:
+            print(
+                f"[DEBUG] Aggregation complete: {len(evaluator.evaluation_map)} aggregation keys generated"
+            )
 
     # evaluator.evaluate()
     evaluator.eval_map()
@@ -595,6 +778,14 @@ def register_arguments(parser: argparse.ArgumentParser) -> None:
         default=LanguageTool.DEFAULT_URL,
         required=False,
         help=f"Language Tool Api URL (optional; default: '{LanguageTool.DEFAULT_URL}')",
+    )
+    parser.add_argument(
+        "--filter-by",
+        required=False,
+        help="Single pre-aggregation filter criterion (optional). "
+        "Format: '<extractor_spec>=<value>' where extractor_spec follows --aggregate-by formats, "
+        "e.g. 'mods:language=ger' (exact) or 'mods:language=ger+eng' (set containment). "
+        "Entries missing the criterion are warned and discarded.",
     )
     parser.add_argument(
         "--aggregate-by",
