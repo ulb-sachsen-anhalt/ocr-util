@@ -54,7 +54,7 @@ Homepage = "https://github.com/ulb-sachsen-anhalt/ocr-util"
 ocr = "ocr_util.cli:start"
 
 [tool.coverage.run]
-source = ["exporter"]
+source = ["src/ocr_util"]
 branch = false
 omit = ["*/tests/*", "*/__pycache__/*", "*/venv/*", "*/build/*"]
 
