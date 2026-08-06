@@ -1,6 +1,7 @@
 # OCR Util
 
-![example workflow](https://github.com/ulb-sachsen-anhalt/ocr-util/actions/workflows/python-app.yml/badge.svg) [![Coverage](./coverage.svg)](https://github.com/openpreserve/fido/actions/workflows/pytest.yml) [![PyPi version](https://badgen.net/pypi/v/digital-eval/)](https://pypi.org/project/digital-eval) ![PyPI - Downloads](https://img.shields.io/pypi/dm/digital-eval) ![PyPI - License](https://img.shields.io/pypi/l/digital-eval) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/digital-eval)
+![python-app](https://github.com/ulb-sachsen-anhalt/ocr-util/actions/workflows/python-app.yml/badge.svg) [![Coverage](./coverage.svg)](https://github.com/ulb-sachsen-anhalt/ocr-util/actions/workflows/pytest.yml) [![PyPi version](https://badgen.net/pypi/v/digital-eval/)](https://pypi.org/project/digital-eval) ![PyPI - Downloads](https://img.shields.io/pypi/dm/digital-eval) ![PyPI - License](https://img.shields.io/pypi/l/digital-eval) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/digital-eval)
+
 
 Collection of utils to 
 * evaluation of OCR data for the masses

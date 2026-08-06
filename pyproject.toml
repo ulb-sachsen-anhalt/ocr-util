@@ -38,13 +38,13 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "black",
-    "isort",
     "pylint",
-    "lxml-stubs",
 ]
 test = [
     "pytest-cov",
     "pytest-xdist",
+    "flake8",
+    "lxml-stubs",
 ]
 
 [project.urls]
@@ -53,18 +53,31 @@ Homepage = "https://github.com/ulb-sachsen-anhalt/ocr-util"
 [project.scripts]
 ocr = "ocr_util.cli:start"
 
-[tool.coverage.run]
-source = ["src/ocr_util"]
-branch = false
-omit = ["*/tests/*", "*/__pycache__/*", "*/venv/*", "*/build/*"]
+[tool.setuptools]
+package-dir = {"" = "src"}
 
-[tool.coverage.report]
-precision = 2
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.black]
 line-length = 120
-target-version = ["py310"]
+target-version = ["py310", "py311", "py312"]
 include = '\.pyi?$'
 
 [tool.pylint.main]
 extension-pkg-allow-list=["lxml.etree"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["ocr_util"]
+omit = ["*/tests/*", "*/__pycache__/*", "*/venv/*", "*/build/*"]
+report = "xml"
+
+[tool.coverage.report]
+precision = 2
