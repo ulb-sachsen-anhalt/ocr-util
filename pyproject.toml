@@ -29,6 +29,7 @@ dev = [
 ]
 test = [
     "pytest-cov",
+    "coverage-badge",
     "pytest-xdist",
     "flake8",
     "lxml-stubs",
