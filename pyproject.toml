@@ -32,6 +32,7 @@ test = [
     "pytest-xdist",
     "flake8",
     "lxml-stubs",
+    "opencv-stubs",
 ]
 
 [project.urls]
@@ -64,17 +65,19 @@ include = '\.pyi?$'
 [tool.pylint.main]
 extension-pkg-allow-list=["lxml.etree"]
 
+[tool.pylint.messages_control]
+reportAttributeAccessIssue = "none"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --cov-report=xml"
 
 [tool.coverage.run]
 source = ["ocr_util"]
 omit = ["*/tests/*", "*/__pycache__/*", "*/venv/*", "*/build/*"]
-report = "xml"
 
 [tool.coverage.report]
 precision = 2

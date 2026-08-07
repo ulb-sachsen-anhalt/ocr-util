@@ -4,6 +4,9 @@
 # disable warnings from fixture names
 # pylint: disable=redefined-outer-name
 
+# handle opencv type errors
+# pylint: disable=no-member
+
 import os
 import pathlib
 import shutil
@@ -103,8 +106,8 @@ def _extract_texts(elements, ns_prefix):
     return texts
 
 
-@pytest.fixture
-def fixture_newspaper_p512(tmpdir):
+@pytest.fixture(name='newspaper_p512')
+def _fixture_newspaper_p512(tmpdir):
     res_alto = os.path.join(RES_ROOT, 'xml', '1667522809_J_0073_0512.xml')
     path = tmpdir.mkdir('training').join('1667522809_J_0073_0512.xml')
     shutil.copyfile(res_alto, path)
@@ -129,10 +132,10 @@ def fixture_newspaper_p512(tmpdir):
     return str(path)
 
 
-def test_create_sets_from_alto_and_tif(fixture_newspaper_p512):
+def test_create_sets_from_alto_and_tif(newspaper_p512):
     """Create text-image pairs from ALTO V3 and TIF"""
 
-    output_dir = os.path.dirname(fixture_newspaper_p512)
+    output_dir = os.path.dirname(newspaper_p512)
     path_input_parent = pathlib.Path(output_dir).parent
     path_tif = os.path.join(
         path_input_parent,
@@ -140,7 +143,7 @@ def test_create_sets_from_alto_and_tif(fixture_newspaper_p512):
         '1667522809_J_0073_0512.tif')
     assert os.path.exists(path_tif)
 
-    _t_sets = TrainingSets(fixture_newspaper_p512, path_tif, output_dir)
+    _t_sets = TrainingSets(newspaper_p512, path_tif, output_dir)
     data = _t_sets.create(min_chars=32, summary=True, padding=5)
 
     # assert
@@ -157,8 +160,8 @@ def test_create_sets_from_alto_and_tif(fixture_newspaper_p512):
     assert len(lines) == 226
 
 
-@pytest.fixture
-def fixture_page2013_jpg(tmpdir):
+@pytest.fixture(name='page2013_jpg')
+def _fixture_page2013_jpg(tmpdir):
 
     res = os.path.join(RES_ROOT, 'xml', OCR_TRANSK_DATA)
     path_page = tmpdir.mkdir('training').join(OCR_TRANSK_DATA)
@@ -175,20 +178,20 @@ def fixture_page2013_jpg(tmpdir):
 
 
 @pytest.mark.skip(reason="assertion on txt_files[1] content is flaky - needs investigation")
-def test_create_sets_from_page2013_and_jpg(fixture_page2013_jpg):
+def test_create_sets_from_page2013_and_jpg(page2013_jpg):
     """
     Create text-image pairs from PAGE2013 and JPG with defaults
     From 33 Textlines one got dropped because in only contained 3 chars
     and min_chars was set to '8'
     """
 
-    path_input_dir = os.path.dirname(fixture_page2013_jpg)
+    path_input_dir = os.path.dirname(page2013_jpg)
     path_input_parent = pathlib.Path(path_input_dir).parent
     path_image = os.path.join(path_input_parent, 'images', OCR_TRANSK_IMAG)
     assert os.path.exists(path_image)
 
     # act
-    training_data = TrainingSets(fixture_page2013_jpg, path_image, output_dir=path_input_dir)
+    training_data = TrainingSets(page2013_jpg, path_image, output_dir=path_input_dir)
     training_data.pair_prefix = OCR_TRANSK
     data = training_data.create(min_chars=8, summary=True)
 
@@ -209,17 +212,16 @@ def test_create_sets_from_page2013_and_jpg(fixture_page2013_jpg):
         assert 'XIX' in arab
 
 
-def test_create_sets_from_page2013_and_jpg_no_summary(
-        fixture_page2013_jpg):
+def test_create_sets_from_page2013_and_jpg_no_summary(page2013_jpg):
     """Create text-image pairs from PAGE2013 and JPG without summary"""
 
-    path_input_dir = os.path.dirname(fixture_page2013_jpg)
+    path_input_dir = os.path.dirname(page2013_jpg)
     path_input_parent = pathlib.Path(path_input_dir).parent
     path_image = os.path.join(path_input_parent, 'images', OCR_TRANSK_IMAG)
     assert os.path.exists(path_image)
 
     # act
-    training_data = TrainingSets(fixture_page2013_jpg, path_image, output_dir=path_input_dir)
+    training_data = TrainingSets(page2013_jpg, path_image, output_dir=path_input_dir)
     data = training_data.create(min_chars=3, summary=False, reorder=True)
 
     # assert
@@ -236,8 +238,8 @@ def test_create_sets_from_page2013_and_jpg_no_summary(
     assert len(txt_files) == expected_len
 
 
-@pytest.fixture
-def fixture_page2019_png(tmpdir):
+@pytest.fixture(name='page2019_png')
+def _fixture_page2019_png(tmpdir):
 
     res = os.path.join(RES_ROOT, 'xml', OCR_D_PAGE_DATA)
     path_page = tmpdir.mkdir('training').join(OCR_D_PAGE_DATA)
@@ -253,14 +255,14 @@ def fixture_page2019_png(tmpdir):
     return str(path_page)
 
 
-def test_create_sets_from_page2019_and_png(fixture_page2019_png):
+def test_create_sets_from_page2019_and_png(page2019_png):
     """
     Create text-image pairs from PAGE2013 and JPG without summary
     From total 35 lines 2 got dropped because they contain less
     than min_len = 8 chars
     """
 
-    path_input_dir = os.path.dirname(fixture_page2019_png)
+    path_input_dir = os.path.dirname(page2019_png)
     path_input_parent = pathlib.Path(path_input_dir).parent
     path_image = os.path.join(
         path_input_parent,
@@ -269,7 +271,7 @@ def test_create_sets_from_page2019_and_png(fixture_page2019_png):
     assert os.path.exists(path_image)
 
     # act
-    training_data = TrainingSets(fixture_page2019_png, path_image, output_dir=path_input_dir)
+    training_data = TrainingSets(page2019_png, path_image, output_dir=path_input_dir)
     data = training_data.create(min_chars=8, summary=True)
 
     # assert
@@ -286,8 +288,8 @@ def test_create_sets_from_page2019_and_png(fixture_page2019_png):
     assert len(txt_files) == 34
 
 
-@pytest.fixture
-def fixture_ocrd_workspace(tmpdir):
+@pytest.fixture(name='ocrd_workspace')
+def _fixture_ocrd_workspace(tmpdir):
     res = os.path.join(RES_ROOT, 'xml', OCR_D_PAGE_DATA)
     path_page = tmpdir.mkdir('OCR-RESULT').join(OCR_D_PAGE_DATA)
     shutil.copyfile(res, path_page)
@@ -297,41 +299,41 @@ def fixture_ocrd_workspace(tmpdir):
     return str(path_page)
 
 
-def test_create_sets_from_ocrd_workdspace(fixture_ocrd_workspace):
+def test_create_sets_from_ocrd_workdspace(ocrd_workspace):
     """Create Training data with default OCR-D-Workspace"""
 
     # arrange
-    path_input_dir = os.path.dirname(fixture_ocrd_workspace)
+    path_input_dir = os.path.dirname(ocrd_workspace)
 
     # act
-    training_data = TrainingSets(fixture_ocrd_workspace, None, output_dir=path_input_dir)
+    training_data = TrainingSets(ocrd_workspace, None, output_dir=path_input_dir)
     data = training_data.create(min_chars=8)
 
     # assert
     assert len(data) == 33
 
 
-@pytest.fixture
-def fixture_ocrd_workspace_invalid(tmpdir):
+@pytest.fixture(name='ocrd_workspace_invalid')
+def _fixture_ocrd_workspace_invalid(tmpdir):
     res = os.path.join(RES_ROOT, 'xml', OCR_D_PAGE_DATA)
     path_page = tmpdir.mkdir('OCR-RESULT').join(OCR_D_PAGE_DATA)
     shutil.copyfile(res, path_page)
     return str(path_page)
 
 
-def test_create_sets_from_ocrd_workdspace_fails(fixture_ocrd_workspace_invalid):
+def test_create_sets_from_ocrd_workdspace_fails(ocrd_workspace_invalid):
     """Create Training data fails because OCR-D-Workspace misses image"""
 
     # act
     with pytest.raises(RuntimeError) as excinfo:
-        TrainingSets(fixture_ocrd_workspace_invalid, None, '/home')
+        TrainingSets(ocrd_workspace_invalid, None, '/home')
 
     # assert
     assert 'invalid image_path' in str(excinfo.value)
 
 
-@pytest.fixture
-def fixture_invalid_coords(tmpdir):
+@pytest.fixture(name='fixture_invalid_coords')
+def _fixture_invalid_coords(tmpdir):
     res = os.path.join(RES_ROOT, 'xml', f'{OCR_DATA_729422}.xml')
     path_page = tmpdir.join(f'{OCR_DATA_729422}.xml')
     shutil.copyfile(res, path_page)
@@ -355,7 +357,7 @@ def test_handle_invalid_coords(fixture_invalid_coords):
 
     # assert: one line was skipped
     expected = "Invalid Coords of Word 'word_1595308100448_546' in 'tl_13'!"
-    assert expected == str(exc.value)
+    assert str(exc.value) == expected
 
 
 @pytest.fixture(name='fixture_page_devanagari')
@@ -387,8 +389,8 @@ def test_handle_page_devanagari_with_textlines(fixture_page_devanagari):
     assert 'tl_25' not in [l.element_id for l in data]
 
 
-@pytest.fixture
-def fixture_alto4_persian(tmpdir):
+@pytest.fixture(name='alto4_persian')
+def _fixture_alto4_persian(tmpdir):
 
     res = os.path.join(RES_ROOT, 'xml', f'{OCR_DATA_PERSIAN}.xml')
     path_page = tmpdir.join(f'{OCR_DATA_PERSIAN}.xml')
@@ -399,16 +401,16 @@ def fixture_alto4_persian(tmpdir):
     return str(tmpdir)
 
 
-def test_handle_alto4_persian_without_strange_strings(fixture_alto4_persian):
+def test_handle_alto4_persian_without_strange_strings(alto4_persian):
     """
     Process data from OpenITI
     https://raw.githubusercontent.com/OpenITI/OCR_GS_Data/master/TypeFaces/persian_intertype/data/
     """
 
     # arrange
-    ocr_data = os.path.join(fixture_alto4_persian, f'{OCR_DATA_PERSIAN}.xml')
-    img_data = os.path.join(fixture_alto4_persian, f'{OCR_DATA_PERSIAN}.png')
-    training_data = TrainingSets(ocr_data, img_data, output_dir=fixture_alto4_persian)
+    ocr_data = os.path.join(alto4_persian, f'{OCR_DATA_PERSIAN}.xml')
+    img_data = os.path.join(alto4_persian, f'{OCR_DATA_PERSIAN}.png')
+    training_data = TrainingSets(ocr_data, img_data, output_dir=alto4_persian)
 
     # act
     data = training_data.create(summary=True)
@@ -418,8 +420,8 @@ def test_handle_alto4_persian_without_strange_strings(fixture_alto4_persian):
     assert 'eSc_line_23302' in [l.element_id for l in data]
 
 
-@pytest.fixture
-def page_1123596(tmp_path):
+@pytest.fixture(name='page_1123596')
+def _fixture_page_1123596(tmp_path):
     """
     Represents data with a single empty TextLine, although there are single Words with content
     Unclear origin; maybe synchronization problem when working with Transkribus
@@ -463,8 +465,8 @@ def test_calculate_greyscale_simple():
     assert c == 200
 
 
-@pytest.fixture
-def rowimage_0251_0011_tl36(tmp_path):
+@pytest.fixture(name='rowimage_0251_0011_tl36')
+def _fixture_rowimage_0251_0011_tl36(tmp_path):
     res = pathlib.Path(RES_ROOT) / 'img' / '1681877805_J_0011_0251_tl_36.tif'
     assert os.path.isfile(res)
     path_img = tmp_path / 'tl_36.tif'
@@ -528,8 +530,8 @@ def test_remove_intruders_0251_tl36(rowimage_0251_0011_tl36):
     assert vals[1] == 143721  # 143721 > 142849
 
 
-@pytest.fixture
-def rowimage_0251_0011_tl04(tmp_path):
+@pytest.fixture(name='rowimage_0251_0011_tl04')
+def _fixture_rowimage_0251_0011_tl04(tmp_path):
     res = pathlib.Path(RES_ROOT) / 'img' / \
         '1681877805_J_0011_0251_tl_4_clean.tif'
     assert os.path.isfile(res)
@@ -571,8 +573,8 @@ def test_no_intruders_0251_tl04_clean(rowimage_0251_0011_tl04):
     assert vals[1] == 254058
 
 
-@pytest.fixture
-def rowimage_inclined(tmp_path):
+@pytest.fixture(name='rowimage_inclined')
+def _fixture_rowimage_inclined(tmp_path):
     res = pathlib.Path(RES_ROOT) / 'img' / 'LINE_099_tl_407.png'
     assert os.path.isfile(res)
     path_img = tmp_path / 'LINE_099_tl_407.png'
@@ -615,16 +617,19 @@ def test_read_metadata_jpg():
 
 
 def test_coords_empty():
+    """Behavior of coords_center with empty input"""
 
-    assert () == coords_center([])
+    assert not coords_center([])
 
 
 @pytest.mark.parametrize("in_data,expected", [
     (['100, 100', '200, 200'], (150, 150)),
     (['1673,576', '1863,605', '1879,589', '1935,601', '2015,558', '2063,602', '2190,603', '2258,587', '2259,464', '2155,443', '2036,455', '2016,474', '1673,472'], (2001.1, 540.7))])
 def test_coords_center(in_data, expected):
+    """Test coords_center with various valid inputs"""
 
     # assert
     result = coords_center(in_data)
+    assert result is not None
     assert result[0] == pytest.approx(expected[0], abs=0.1)
     assert result[1] == pytest.approx(expected[1], abs=0.1)

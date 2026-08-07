@@ -4,34 +4,27 @@ and corresponding ALTO or PAGE files
 """
 
 import abc
+import functools
 import math
 import os
+import pathlib
 import sys
-
-from functools import (
-	reduce
-)
-from pathlib import (
-    Path
-)
-from typing import (
-    List
-)
+import typing
 
 import cv2
-
 import exifread
 import lxml.etree as ET
 import numpy as np
-
 import PIL.Image
 
 
+# silence sonar warnings about insecure HTTP-URLs, since these are only used as XML namespace identifiers
 XML_NS = {
-    'alto3': 'http://www.loc.gov/standards/alto/ns-v3#',
-    'alto4': 'http://www.loc.gov/standards/alto/ns-v4#',
-    'page2013': 'http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15',
-    'page2019': 'http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15'}
+    'alto3': 'http://www.loc.gov/standards/alto/ns-v3#', # NOSONAR 55332
+    'alto4': 'http://www.loc.gov/standards/alto/ns-v4#', # NOSONAR 55332
+    'page2013': 'http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15', # NOSONAR 55332
+    'page2019': 'http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15' # NOSONAR 55332
+}
 
 # default values
 DEFAULT_MIN_CHARS = 1
@@ -57,6 +50,8 @@ CLEAR_MARKS = [
     '\u202c'   # 'POP DIRECTIONAL FORMATTING
 ]
 
+_rng = np.random.default_rng()
+
 # silence pylint
 # not able to analyse opencv wrapper bindings
 # pylint:disable=no-member
@@ -81,6 +76,7 @@ class TextLine(abc.ABC):
         self.text_words = []
         self.reorder = None
         self.vertical = False
+        self.shape: typing.List[typing.Tuple[int, int]] = []
 
     @abc.abstractmethod
     def set_id(self):
@@ -90,7 +86,8 @@ class TextLine(abc.ABC):
     def set_text(self):
         """Determine list of word tokens"""
 
-    def get_shape(self, _):
+    @abc.abstractmethod
+    def get_shape(self) -> typing.List[typing.Tuple[int, int]]:
         """
         Return TextLine shape
         Optional(PAGE): Box filled with median color value
@@ -105,7 +102,7 @@ class TextLine(abc.ABC):
 
         aggregat = ' '.join(self.text_words)
         if self.reorder:
-            return reduce(lambda c, p: p + ' ' + c, self.text_words)
+            return functools.reduce(lambda c, p: p + ' ' + c, self.text_words)
         return aggregat
 
     def __repr__(self):
@@ -120,7 +117,7 @@ class ALTOLine(TextLine):
         self.set_id()
         self.set_text()
         if self.valid:
-            self.shape = self.get_shape(self.element)
+            self.shape = self.get_shape()
 
     def set_id(self):
         self.element_id = self.element.attrib['ID']
@@ -129,17 +126,17 @@ class ALTOLine(TextLine):
         strings = self.element.findall(f'{self.namespace}:String', XML_NS)
         self.text_words = [e.attrib['CONTENT'] for e in strings]
 
-    def get_shape(self, element):
-        x_1 = int(element.attrib['HPOS'])
-        y_1 = int(element.attrib['VPOS'])
-        y_2 = y_1 + int(element.attrib['HEIGHT'])
-        x_2 = x_1 + int(element.attrib['WIDTH'])
+    def get_shape(self) -> typing.List[typing.Tuple[int, int]]:
+        x_1 = int(self.element.attrib['HPOS'])
+        y_1 = int(self.element.attrib['VPOS'])
+        y_2 = y_1 + int(self.element.attrib['HEIGHT'])
+        x_2 = x_1 + int(self.element.attrib['WIDTH'])
         return [(x_1, y_1), (x_2, y_1), (x_2, y_2), (x_1, y_2)]
 
-    def get_next_element_height(self, element):
-        y_start = int(element.attrib['VPOS'])
-        y_height = int(element.attrib['HEIGHT'])
-        return y_start + y_height
+    # def get_next_element_height(self, element):
+    #     y_start = int(element.attrib['VPOS'])
+    #     y_height = int(element.attrib['HEIGHT'])
+    #     return y_start + y_height
 
 
 class PageLine(TextLine):
@@ -151,7 +148,7 @@ class PageLine(TextLine):
         self.set_text()
         if self.valid:
             self.reorder = reorder
-            self.shape = self.get_shape(self.element)
+            self.shape = self.get_shape()
 
     def set_id(self):
         self.element_id = self.element.attrib['id']
@@ -185,7 +182,7 @@ class PageLine(TextLine):
 
         sorted_els = sorted(
             texts,
-            key=lambda w: int(to_center_coords(w, self.namespace, self.vertical)))
+            key=lambda w: int(to_center_coords(w, self.namespace, self.vertical) or 0))
         unicodes = [
             w.find(
                 f'.//{self.namespace}:Unicode',
@@ -200,13 +197,13 @@ class PageLine(TextLine):
                     self.text_words[i] = strip.replace(mark, '')
 
 
-    def get_shape(self, element):
+    def get_shape(self) -> typing.List[typing.Tuple[int, int]]:
         """
         Coordinate data from current OCR-D-Workflows can contain
         lots of points, therefore additional calculations are required
         """
 
-        p_attr = element.find(
+        p_attr = self.element.find(
             f'{self.namespace}:Coords',
             XML_NS).attrib['points']
         numbers = [int(n) for pair in p_attr.split() for n in pair.split(',')]
@@ -214,7 +211,7 @@ class PageLine(TextLine):
         # group clustering idiom
         points = list(zip(*[iter(numbers)] * 2))
 
-        return np.array((points), dtype=np.uint32)
+        return [(int(p[0]), int(p[1])) for p in points]
 
 
 def text_line_factory(xml_data, min_len, reorder):
@@ -232,6 +229,7 @@ def text_line_factory(xml_data, min_len, reorder):
 
 
 def get_alto_lines(xml_data, ns_prefix, min_len):
+    """process ALTO XML data and return list of text lines with content length >= min_len"""
     all_lines = xml_data.findall(f'.//{ns_prefix}:TextLine', XML_NS)
     all_lines_len = [l for l in all_lines if len(' '.join(
         [s.attrib['CONTENT'] for s in l.findall(f'{ns_prefix}:String', XML_NS)])) >= min_len]
@@ -239,6 +237,7 @@ def get_alto_lines(xml_data, ns_prefix, min_len):
 
 
 def get_page_lines(xml_data, ns_prefix, min_len, reorder):
+    """process PAGE XML data and return list of text lines with content length >= min_len"""
     all_lines = xml_data.findall(f'.//{ns_prefix}:TextLine', XML_NS)
     matchings = []
     for textline in all_lines:
@@ -265,11 +264,13 @@ def resolve_image_path(path_xml_data):
     xml_data = ET.parse(path_xml_data).getroot()
     ns_prefix = _determine_namespace(xml_data)
     if ns_prefix in ('page2013', 'page2019'):
-        img_file = xml_data.find(
-            f'.//{ns_prefix}:Page', XML_NS).attrib['imageFilename']
+        page_elem = xml_data.find(f'.//{ns_prefix}:Page', XML_NS)
+        if page_elem is None:
+            return None
+        img_file = page_elem.attrib['imageFilename']
         if img_file:
-            workspace_dir = Path(path_xml_data).parent.parent
-            img_path = os.path.join(workspace_dir, img_file)
+            workspace_dir = pathlib.Path(path_xml_data).parent.parent
+            img_path = workspace_dir / str(img_file)
             if not os.path.exists(img_path):
                 raise RuntimeError(
                     f"can't handle invalid image_path : '{img_path}'")
@@ -300,9 +301,9 @@ class TrainingSets:
         if not self.path_image_data:
             self._resolve_image_path(path_ocr_data)
         self.image_data = load_image(self.path_image_data)
-        self.output_dir: Path = output_dir
-        if not isinstance(self.output_dir, Path):
-            self.output_dir = Path(self.output_dir).resolve()
+        self.output_dir: pathlib.Path = output_dir
+        if not isinstance(self.output_dir, pathlib.Path):
+            self.output_dir = pathlib.Path(self.output_dir).resolve()
         self.xdpi = None
         self.ydpi = None
         (self.xdpi, self.ydpi) = read_dpi(self.path_image_data)
@@ -312,7 +313,7 @@ class TrainingSets:
         """label for pair files"""
 
         if self._pair_prefix is None:
-            _raw_label = Path(self.path_ocr_data).stem
+            _raw_label = pathlib.Path(self.path_ocr_data).stem
             if _raw_label.isnumeric():
                 self._pair_prefix = f'page{int(_raw_label)}'
             else:
@@ -372,7 +373,7 @@ class TrainingSets:
                    image_handle, sanitize: bool, intrusion_ratio, rotation_threshold, binarize, padding):
         """Serialize training data pairs"""
 
-        data_name = Path( self.path_ocr_data).name.split(".")[0]
+        data_name = pathlib.Path(self.path_ocr_data).name.split(".")[0]
         if data_name.isnumeric():
             data_name = f'p{int(data_name)}'
         output_dir = self.output_dir / self.pair_prefix
@@ -393,9 +394,9 @@ class TrainingSets:
                 img_frame = binarize_frame(img_frame)
             params = self._calculate_tiff_param()
             if params:
-                cv2.imwrite(img_path, img_frame, params)
+                cv2.imwrite(str(img_path), img_frame, params)
             else:
-                cv2.imwrite(img_path, img_frame)
+                cv2.imwrite(str(img_path), img_frame)
             # write text file
             with open(gt_txt_path, 'w', encoding="utf8") as fhdl:
                 fhdl.write(content)
@@ -403,7 +404,7 @@ class TrainingSets:
             _msg = f"Can't extract pair {gt_txt_path}/{img_path} for {text_line}"
             raise ExtractPairException(_msg)
 
-    def write_summary(self, training_datas: List):
+    def write_summary(self, training_datas: typing.List):
         """Serialize training data pairs"""
 
         contents = [d.get_textline_content() + '\n' for d in training_datas]
@@ -426,6 +427,7 @@ def calculate_grayscale(low=168, neighbourhood=32, in_data=None):
         the_low = int(ref - nb_center)
         the_high = int(ref + nb_center)
         return (the_low, the_high, the_low+nb_center)
+    return (low, low+neighbourhood, low+nb_center)
 
 
 def gray_canvas(w, h, low=168, bound=8, in_data=None):
@@ -434,7 +436,7 @@ def gray_canvas(w, h, low=168, bound=8, in_data=None):
     calculate range from in_data
     """
     (start, end, _) = calculate_grayscale(low, bound, in_data)
-    the_raw = np.random.randint(start, end, (h, w)).astype(np.uint8)
+    the_raw = _rng.integers(start, end, (h, w)).astype(np.uint8)
     kernel = np.ones((5, 5), np.float32)/25
     return cv2.filter2D(the_raw, -1, kernel)
 
@@ -461,10 +463,10 @@ def is_rectangular(a_shape) -> bool:
     https://stackoverflow.com/questions/62467829/python-check-if-shapely-polygon-is-a-rectangle
     """
     (_, _, angle) = cv2.minAreaRect(np.array(a_shape, dtype=np.float32))
-    return angle == 90.0
+    return round(angle) == 90
 
 
-def extract_rectangular_frame(image_handle, text_line: PageLine):
+def extract_rectangular_frame(image_handle, text_line: TextLine):
     """
     Cut frame if it is rectangular, otherwise mask shape
     and merge it with background.
@@ -538,8 +540,7 @@ def clear_vertical_borders(image_frame, intrusion_ratio):
     if len(invasores) > 0:
         the_gray = calculate_grayscale(in_data=image_frame)
         # scale slightly up
-        scaled = [cv2.resize(i.astype(np.float32), None,
-                             fx=1.49, fy=1.49) for i in invasores]
+        scaled = [cv2.resize(i.astype(np.float32), (0, 0), fx=1.49, fy=1.49) for i in invasores]
         scaled_pts = [s.astype(np.int32) for s in scaled]
         cv2.fillPoly(image_frame, pts=scaled_pts,
                      color=(the_gray), lineType=cv2.LINE_AA)
@@ -575,7 +576,7 @@ def fit_to_shape(image_frame, shape_coords):
     # translate coords
     pts = pts - [x, y]
     # create boolean mask where pixel color != 0
-    mask = np.zeros((image_frame.shape))
+    mask = np.zeros(image_frame.shape, dtype=np.uint8)
     cv2.fillConvexPoly(mask, pts, 1)
     mask = mask.astype(bool)
     # reduce w/h since the refer to the bounding/enclosing box
@@ -603,7 +604,7 @@ def rotate_text_line_center(img, rotation_threshold=0.1, max_angle=10.0):
     angle = None
     if img.ndim == 3:
         img = np.mean(img, -1).astype(np.uint8)
-    edges = cv2.Canny(img, 100, 300, 5)
+    edges = cv2.Canny(img, 100, 300)
     min_len = img.shape[1] / 4
     max_gap = min_len
     min_votes = int(img.shape[0] / 2)
@@ -611,8 +612,10 @@ def rotate_text_line_center(img, rotation_threshold=0.1, max_angle=10.0):
                             minLineLength=min_len, maxLineGap=max_gap)
     if lines is None:
         return (img, angle)
-    ptn_quads = [(m[0], m[1], m[2], m[3])
-                 for l in np.take(lines, [0, 1, 2, 3], axis=2) for m in l]
+    # OpenCV 5+ returns (N, 4); older versions returned (N, 1, 4)
+    if lines.ndim == 3:
+        lines = lines[:, 0, :]
+    ptn_quads = [(m[0], m[1], m[2], m[3]) for m in lines]
     angs = [math.atan2(x2-x1, y2-y1) * 180 / np.pi for x1,
             y1, x2, y2 in ptn_quads]
     fit_angles = [a for a in angs if abs(90.0-a) < max_angle]
@@ -620,9 +623,9 @@ def rotate_text_line_center(img, rotation_threshold=0.1, max_angle=10.0):
     if abs(90.0 - mean_angle) >= rotation_threshold:
         angle = 90.0 - mean_angle
         center = image_center(img)
-        M = cv2.getRotationMatrix2D(center, angle, 1.0)
+        rotation_matrix = cv2.getRotationMatrix2D(center, float(angle), 1.0)
         img = add_padding(img, 50)
-        img = cv2.warpAffine(img, M, img.shape[1::-1], flags=cv2.INTER_LINEAR)
+        img = cv2.warpAffine(img, rotation_matrix, (img.shape[1], img.shape[0]), flags=cv2.INTER_LINEAR)
         img = img[50:-50, 50:-50]
     return (img, angle)
 
@@ -676,18 +679,24 @@ def read_dpi(path_image_data):
     return (DEFAULT_DPI, DEFAULT_DPI)
 
 
-def coords_center(coord_tokens):
+def coords_center(coord_tokens: typing.List[str]) -> typing.Optional[typing.Tuple[float, float]]:
     """Calculate Shape center from textual represented coordinates data"""
-    vals = [int(b) for a in map(lambda e: e.split(','), coord_tokens) for b in a]
+    vals = [int(b) for a in coord_tokens for b in a.split(",")]
     point_pairs = list(zip(*[iter(vals)]*2))
-    return tuple(map(lambda c: sum(c) / len(c), zip(*point_pairs)))
+    if len(point_pairs) == 0:
+        return None
+    (xs, ys) = zip(*point_pairs)
+    return (sum(xs) / len(xs), sum(ys) / len(ys))
 
 
 def to_center_coords(elem, namespace, vertical=False):
+    """Calculate Shape center from textual represented coordinates data"""
     coords = elem.find(f'{namespace}:Coords', XML_NS)
     coord_tokens = coords.attrib['points'].split()
     if len(coord_tokens) > 0:
         center = coords_center(coord_tokens)
+        if not center:
+            return None
         if vertical:
             return center[1]
         return center[0]

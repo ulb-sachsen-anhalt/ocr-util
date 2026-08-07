@@ -13,6 +13,7 @@ target
 
 # ignore coverage stuff
 .coverage
+coverage.xml
 htmlcov
 
 # ignore build artifacts
