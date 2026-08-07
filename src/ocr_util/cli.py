@@ -94,7 +94,7 @@ def start() -> None:
     # groundtruth-corpus subcommand
     groundtruth_corpus_arg_parser = sub_arg_parsers.add_parser(
         SUB_CMD_GROUNDTRUTH_CORPUS,
-        help="Create METS files from ground truth PAGE-XML files with URN identifiers",
+        help="Create METS file from N ground truth PAGE-XML files with URN identifiers",
     )
     groundtruth_corpus_arg_parser.add_argument(
         "-i",

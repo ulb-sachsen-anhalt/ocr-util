@@ -340,7 +340,7 @@ class MetsResourceFile(MetsFile):
         assert log_id is not None, f"log ID for smLink with to='{source_phys_id}' not found"
         log_div = the_root.find(f'.//mets:div[@ID="{log_id}"]', self.nsmap)
         assert log_div is not None, f"log div with ID='{log_id}' not found"
-        # clean up logical div: remove attributes like "AMDID", remove all child elements
+        # clean up logical div: remove un-related attributes like "AMDID", remove all child elements
         if log_div.get("AMDID") is not None:
             log_div.attrib.pop("AMDID")
         for child in log_div.getchildren():
