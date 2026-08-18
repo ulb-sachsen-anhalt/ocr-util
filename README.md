@@ -1,9 +1,9 @@
 # OCR Util
 
-![python-app](https://github.com/ulb-sachsen-anhalt/ocr-util/actions/workflows/python-app.yml/badge.svg) [![Coverage](./coverage.svg)](https://github.com/ulb-sachsen-anhalt/ocr-util/actions/workflows/python-app.yml) [![PyPi version](https://badgen.net/pypi/v/digital-eval/)](https://pypi.org/project/digital-eval) ![PyPI - Downloads](https://img.shields.io/pypi/dm/digital-eval) ![PyPI - License](https://img.shields.io/pypi/l/digital-eval) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/digital-eval)
+![python-app](https://github.com/ulb-sachsen-anhalt/ocr-util/actions/workflows/python-app.yml/badge.svg) [![Coverage](https://raw.githubusercontent.com/ulb-sachsen-anhalt/ocr-util/main/coverage.svg)](https://github.com/ulb-sachsen-anhalt/ocr-util/actions/workflows/python-app.yml) [![PyPi version](https://badgen.net/pypi/v/ocr-util/)](https://pypi.org/project/ocr-util) ![PyPI - Downloads](https://img.shields.io/pypi/dm/ocr-util) ![PyPI - License](https://img.shields.io/pypi/l/ocr-util) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ocr-util)
 
 
-Collection of utils to 
+Collection of utils for 
 * evaluation of OCR data for the masses
 * generation of extended OCR-Evaluation Corpora
 * generation of pair-wise Trainingdata for OCR-Backends
@@ -19,16 +19,16 @@ Each section contains detailed usage help instructions:
 
 ```bash
 # evaluation
-ocr eval --help
+ocr-util eval --help
 
 # corpus management
-ocr corpus --help
+ocr-util corpus --help
 
 # slice image by image + input OCR
-ocr slice --help
+ocr-util slice --help
 
 # render image + input OCR
-ocr show --help
+ocr-util show --help
 ```
 
 ### Data problems
@@ -36,7 +36,8 @@ ocr show --help
 Inconsistent OCR Groundtruth with empty texts (ALTO String elements missing CONTENT or PAGE without TextEquiv) or invalid geometrical coordinates (less than 3 points or even empty) will lead to evaluation errors if geometry must be respected.
 
 _Please note_:  
-Invalid data files are tried(!) to be excluded from evaluation.
+Invalid data files are excluded and reported where possible from evaluation.  
+The term 'invalid' refers to errors in schemas in structured XML-data, i.e. syntax errors and further if included geometrical information includes inconsistencies like missing points or missmatching shapes.
 
 ### Evaluation Filter-Then-Aggregate
 
@@ -45,7 +46,7 @@ The evaluation CLI supports a single pre-aggregation filter using metadata extra
 Example: keep only entries where MODS language is exactly German, then aggregate by publication century:
 
 ```bash
-ocr eval <candidates> \
+ocr-util eval <candidates> \
 	--reference <groundtruth> \
 	--mets-file <mets.xml> \
 	--filter-by "mods:language=ger" \
@@ -55,7 +56,7 @@ ocr eval <candidates> \
 Multi-language filter values are interpreted as sets:
 
 ```bash
-ocr eval <candidates> \
+ocr-util eval <candidates> \
 	--reference <groundtruth> \
 	--mets-file <mets.xml> \
 	--filter-by "mods:language=ger+eng" \
@@ -69,7 +70,7 @@ Behavior:
 
 ## Development
 
-Plattform: Intel(R) Core(TM) i5-6500 CPU@3.20GHz, 16GB RAM, Ubuntu 22.04 LTS, Python 3.10+
+Platform: Intel(R) Core(TM) i5-6500 CPU@3.20GHz, 16GB RAM, Ubuntu 22.04 LTS, Python 3.10+
 
 ```bash
 # clone local
