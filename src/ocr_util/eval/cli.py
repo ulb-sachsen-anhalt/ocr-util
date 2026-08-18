@@ -8,7 +8,6 @@ import typing
 
 from pathlib import Path
 
-import ocr_util
 import ocr_util.eval as digev
 import ocr_util.eval.dictionary_metrics.common as digev_cm
 import ocr_util.eval.metrics as digem
@@ -818,7 +817,7 @@ def register_arguments(parser: argparse.ArgumentParser) -> None:
 
 def start():
     """Wrap argparsing"""
-    parser = argparse.ArgumentParser(description=f"OCR Utils {ocr_util.__version__}")
+    parser = argparse.ArgumentParser()
     register_arguments(parser)
     main_args = vars(parser.parse_args())
     start_evaluation(main_args)

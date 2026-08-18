@@ -53,6 +53,8 @@ GT_METS_FILEGROUP_IMAGE = "GT-IMAGE"
 DEFAULT_METS_FILE_NAME = "mets.xml"
 INDENT = 4
 
+DMDID_GLUE = "_"
+
 EASY_URN_XML_PATTERN = r"^(urn[\+\-\w]+)-fp-(\w+).xml$"
 
 METS_MEDIA_TYPES = {
@@ -492,7 +494,7 @@ class MetsResourceFile(MetsFile):
         section.log_div.set("ID", new_log_id)
         assert section.dmd_sec is not None, "DMD section missing in section for re-indexing"
         prev_dmdid = section.dmd_sec.get("ID")
-        new_dmdid = f"{prev_dmdid}#{section.calculated_identifier_hash}"
+        new_dmdid = f"{prev_dmdid}{DMDID_GLUE}{section.calculated_identifier_hash}"
         section.log_div.set("DMDID", new_dmdid)
         section.dmd_sec.set("ID", new_dmdid)
         logger.debug("Re-assigning DMDID '%s' to '%s'", prev_dmdid, new_dmdid)

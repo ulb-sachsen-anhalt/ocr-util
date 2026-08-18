@@ -40,7 +40,7 @@ test = [
 Homepage = "https://github.com/ulb-sachsen-anhalt/ocr-util"
 
 [project.scripts]
-ocr = "ocr_util.cli:start"
+ocr-util = "ocr_util.cli:start"
 
 [build-system]
 requires = ["setuptools>=61.0.0", "wheel"]
@@ -79,6 +79,3 @@ addopts = "-v --tb=short --cov-report=xml"
 [tool.coverage.run]
 source = ["ocr_util"]
 omit = ["*/tests/*", "*/__pycache__/*", "*/venv/*", "*/build/*"]
-
-[tool.coverage.report]
-precision = 2

@@ -7,6 +7,7 @@ import os
 import re
 from pathlib import Path, PurePath
 
+import ocr_util
 import ocr_util.eval.model as do
 import ocr_util.eval.model.filter as dofi
 import ocr_util.eval.cli as eval_cli
@@ -48,7 +49,8 @@ def start() -> None:
         datefmt='%Y-%m-%d %H:%M:%S'
     )
     arg_parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        prog="ocr",
+        prog="ocr-util",
+        description=f"OCR Util {ocr_util.__version__} of ULB Sachsen-Anhalt",
     )
     sub_arg_parsers = arg_parser.add_subparsers(
         title="Subkommandos",
