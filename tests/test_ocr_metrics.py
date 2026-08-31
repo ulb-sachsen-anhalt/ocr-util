@@ -204,7 +204,7 @@ def test_metric_character_zd1_0002():
 
     assert filtered_from_candidate == 103
     assert normed_to_cand == normed_to_refr
-    assert 0.3919 == pytest.approx(normed_to_cand, abs=1e-4)
+    assert 0.3920 == pytest.approx(normed_to_cand, abs=1e-4)
 
 
 def test_metric_bot_ident():

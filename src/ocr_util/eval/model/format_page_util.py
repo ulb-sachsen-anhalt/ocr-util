@@ -179,7 +179,7 @@ class FormatPageUtil:
                 # replace linebreak if text only at region level
                 txt_content = the_unicode.firstChild.nodeValue.replace("\n", " ")
                 if txt_content:
-                    piece.transcription = txt_content
+                    piece.transcription = txt_content.strip() # no final space
                     # overthrow existing parent transcription
                     if piece.parent is not None and piece.parent.transcriptions:
                         piece.parent.transcriptions = []

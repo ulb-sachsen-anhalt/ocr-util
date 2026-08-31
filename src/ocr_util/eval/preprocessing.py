@@ -159,9 +159,25 @@ class TextPreprocessor(Preprocessor):
 
         self._input = unicodedata.normalize(self.code_norm, self._input)
 
+    def normalize_whitespace(self):
+        """normalize line breaks and control characters to spaces.
+        
+        replaces newlines, carriage returns, and other line break
+        sequences with single spaces. This ensures consistent handling
+        of multi-line text data from different sources (ALTO, PAGE, etc).
+        """
+        if isinstance(self._input, str):
+            # Replace various line break sequences with spaces
+            self._input = self._input.replace('\r\n', ' ')  # Windows line breaks
+            self._input = self._input.replace('\r', ' ')    # Old Mac line breaks
+            self._input = self._input.replace('\n', ' ')    # Unix line breaks
+            self._input = self._input.replace('\v', ' ')    # Vertical tab
+            self._input = self._input.replace('\f', ' ')    # Form feed
+
     def run(self):
         if isinstance(self._input, Path):
             self._input, _ = file_to_text(self._input, self.frame, self.one_liner)
+        self.normalize_whitespace()
         self.normalize_encoding()
 
 

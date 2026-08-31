@@ -117,7 +117,7 @@ def test_evaluate_single_alto_candidate_with_page_groundtruth(eval_paths):
     # reference size chars
     # changed from 5385 to 5309 since
     # children text wins over parent text
-    assert 5309 == defaults[4]
+    assert 5308 == defaults[4]
 
 
 def test_evaluate_page_groundtruth_with_itself(eval_paths):
@@ -152,7 +152,7 @@ def test_evaluate_page_groundtruth_with_itself(eval_paths):
     # reference size chars
     # changed from 5385 to 5309 since
     # children text wins over parent text
-    assert 5309 == defaults[4]
+    assert 5308 == defaults[4]
 
 
 def test_evaluate_set_with_5_entries(tmp_path):

@@ -1,0 +1,191 @@
+<?xml version="1.0" ?>
+<alto xmlns="http://www.loc.gov/standards/alto/ns-v4#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/standards/alto/ns-v4# http://www.loc.gov/standards/alto/v4/alto.xsd">
+  <Description>
+    <MeasurementUnit>pixel</MeasurementUnit>
+    <sourceImageInformation>
+      <fileName>urn+nbn+de+gbv+3+1-119201541511222-567754766-13-fp-0049.jpg</fileName>
+    </sourceImageInformation>
+    <OCRProcessing ID="odem_ocr_1">
+      <ocrProcessingStep>
+        <processingDateTime>2026-08-31T15:42:07.434751</processingDateTime>
+        <processingSoftware>
+          <softwareCreator>ODEM Project</softwareCreator>
+          <softwareName>ODEM</softwareName>
+          <softwareVersion>2.0</softwareVersion>
+          <applicationDescription>tesseract;tesseract 5.5.1 / tesserocr 2.11.0 / frk_2021</applicationDescription>
+        </processingSoftware>
+      </ocrProcessingStep>
+    </OCRProcessing>
+  </Description>
+  <Layout>
+    <Page ID="page_urn+nbn+de+gbv+3+1-119201541511222-567754766-13-fp-0049" PHYSICAL_IMG_NR="1.0" HEIGHT="2716" WIDTH="2300">
+      <PrintSpace HEIGHT="2616" WIDTH="2200" HPOS="50" VPOS="50">
+        <TextBlock ID="block_TEXTLINE_0" HPOS="42" VPOS="131" HEIGHT="44" WIDTH="1675">
+          <TextLine ID="line_TEXTLINE_0" HPOS="42" VPOS="131" HEIGHT="44" WIDTH="1675">
+            <String ID="s_0000_0000" HPOS="42" VPOS="131" HEIGHT="44" WIDTH="1675" CONTENT="— SDSDSDSISSI — —F F:——" WC="0.0000"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_1" HPOS="417" VPOS="272" HEIGHT="84" WIDTH="671">
+          <TextLine ID="line_TEXTLINE_1" HPOS="417" VPOS="272" HEIGHT="84" WIDTH="671">
+            <String ID="s_0001_0000" HPOS="417" VPOS="272" HEIGHT="84" WIDTH="671" CONTENT="Johan: Frideric: Celeſtin:" WC="0.8065"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_2" HPOS="213" VPOS="358" HEIGHT="68" WIDTH="1091">
+          <TextLine ID="line_TEXTLINE_2" HPOS="213" VPOS="358" HEIGHT="68" WIDTH="1091">
+            <String ID="s_0002_0000" HPOS="213" VPOS="358" HEIGHT="68" WIDTH="1091" CONTENT="ſachen / ja ſo gewis / ja viel gewiſſer / als jenes de dub⸗" WC="0.8938"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_3" HPOS="210" VPOS="419" HEIGHT="49" WIDTH="571">
+          <TextLine ID="line_TEXTLINE_3" HPOS="210" VPOS="419" HEIGHT="49" WIDTH="571">
+            <String ID="s_0003_0000" HPOS="210" VPOS="419" HEIGHT="49" WIDTH="571" CONTENT="ſtantia &amp; Accidente ſein mag." WC="0.9065"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_4" HPOS="263" VPOS="475" HEIGHT="59" WIDTH="1042">
+          <TextLine ID="line_TEXTLINE_4" HPOS="263" VPOS="475" HEIGHT="59" WIDTH="1042">
+            <String ID="s_0004_0000" HPOS="263" VPOS="475" HEIGHT="59" WIDTH="1042" CONTENT="Was aber endlich ſolche Confuſion vnd vermen⸗" WC="0.9237"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_5" HPOS="210" VPOS="523" HEIGHT="65" WIDTH="1095">
+          <TextLine ID="line_TEXTLINE_5" HPOS="210" VPOS="523" HEIGHT="65" WIDTH="1095">
+            <String ID="s_0005_0000" HPOS="210" VPOS="523" HEIGHT="65" WIDTH="1095" CONTENT="gung Philoſophiſcher vnd Goͤrtlicher Chriſtlicher" WC="0.8715"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_6" HPOS="210" VPOS="575" HEIGHT="57" WIDTH="1096">
+          <TextLine ID="line_TEXTLINE_6" HPOS="210" VPOS="575" HEIGHT="57" WIDTH="1096">
+            <String ID="s_0006_0000" HPOS="210" VPOS="575" HEIGHT="57" WIDTH="1096" CONTENT="Lere / der Rirchen Gottes fuͤr groſſen ſchaden brin⸗" WC="0.8647"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_7" HPOS="211" VPOS="627" HEIGHT="63" WIDTH="1092">
+          <TextLine ID="line_TEXTLINE_7" HPOS="211" VPOS="627" HEIGHT="63" WIDTH="1092">
+            <String ID="s_0007_0000" HPOS="211" VPOS="627" HEIGHT="63" WIDTH="1092" CONTENT="gen werde / woͤllen verſtendige Chriſten bedencken⸗" WC="0.8593"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_8" HPOS="211" VPOS="680" HEIGHT="58" WIDTH="1094">
+          <TextLine ID="line_TEXTLINE_8" HPOS="211" VPOS="680" HEIGHT="58" WIDTH="1094">
+            <String ID="s_0008_0000" HPOS="211" VPOS="680" HEIGHT="58" WIDTH="1094" CONTENT="vnd hat zwar die erfarung / im Babſtumb viel hun⸗" WC="0.9224"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_9" HPOS="213" VPOS="730" HEIGHT="60" WIDTH="1091">
+          <TextLine ID="line_TEXTLINE_9" HPOS="213" VPOS="730" HEIGHT="60" WIDTH="1091">
+            <String ID="s_0009_0000" HPOS="213" VPOS="730" HEIGHT="60" WIDTH="1091" CONTENT="derr Jaren / leider alzu viel gegeben / Darumb auch" WC="0.9126"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_10" HPOS="0" VPOS="783" HEIGHT="59" WIDTH="1306">
+          <TextLine ID="line_TEXTLINE_10" HPOS="0" VPOS="783" HEIGHT="59" WIDTH="1306">
+            <String ID="s_0010_0000" HPOS="0" VPOS="783" HEIGHT="59" WIDTH="1306" CONTENT="0 der liebe Apoſtel S. Paulus ſo ernſtlich darfuͤr war⸗" WC="0.7854"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_11" HPOS="4" VPOS="835" HEIGHT="55" WIDTH="1303">
+          <TextLine ID="line_TEXTLINE_11" HPOS="4" VPOS="835" HEIGHT="55" WIDTH="1303">
+            <String ID="s_0011_0000" HPOS="4" VPOS="835" HEIGHT="55" WIDTH="1303" CONTENT="8 net / Coloſ. 2. Sehet zu / das euch niemand ber aube" WC="0.6604"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_12" HPOS="213" VPOS="888" HEIGHT="61" WIDTH="1094">
+          <TextLine ID="line_TEXTLINE_12" HPOS="213" VPOS="888" HEIGHT="61" WIDTH="1094">
+            <String ID="s_0012_0000" HPOS="213" VPOS="888" HEIGHT="61" WIDTH="1094" CONTENT="durch die Philo ſophia / vnd loſe verfuͤrung / nach der" WC="0.8641"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_13" HPOS="3" VPOS="939" HEIGHT="55" WIDTH="1304">
+          <TextLine ID="line_TEXTLINE_13" HPOS="3" VPOS="939" HEIGHT="55" WIDTH="1304">
+            <String ID="s_0013_0000" HPOS="3" VPOS="939" HEIGHT="55" WIDTH="1304" CONTENT="n Menſchen lere / da nichts hinder iſt / vnd nach der" WC="0.8888"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_14" HPOS="0" VPOS="995" HEIGHT="53" WIDTH="1059">
+          <TextLine ID="line_TEXTLINE_14" HPOS="0" VPOS="995" HEIGHT="53" WIDTH="1059">
+            <String ID="s_0014_0000" HPOS="0" VPOS="995" HEIGHT="53" WIDTH="1059" CONTENT="e Welt ſatzungen / vnd nicht nach Chriſto." WC="0.8901"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_15" HPOS="0" VPOS="1055" HEIGHT="83" WIDTH="818">
+          <TextLine ID="line_TEXTLINE_15" HPOS="0" VPOS="1055" HEIGHT="83" WIDTH="818">
+            <String ID="s_0015_0000" HPOS="0" VPOS="1055" HEIGHT="83" WIDTH="818" CONTENT="1 XX." WC="0.3656"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_16" HPOS="270" VPOS="1130" HEIGHT="58" WIDTH="1041">
+          <TextLine ID="line_TEXTLINE_16" HPOS="270" VPOS="1130" HEIGHT="58" WIDTH="1041">
+            <String ID="s_0016_0000" HPOS="270" VPOS="1130" HEIGHT="58" WIDTH="1041" CONTENT="D à S das wort Sleiſch / im Spruch Chriſti / was" WC="0.8172"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_17" HPOS="217" VPOS="1183" HEIGHT="52" WIDTH="1095">
+          <TextLine ID="line_TEXTLINE_17" HPOS="217" VPOS="1183" HEIGHT="52" WIDTH="1095">
+            <String ID="s_0017_0000" HPOS="217" VPOS="1183" HEIGHT="52" WIDTH="1095" CONTENT="vom Sleiſch geborẽ wird / das iſt Sleiſch / nicht den gan" WC="0.7823"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_18" HPOS="0" VPOS="1220" HEIGHT="69" WIDTH="1312">
+          <TextLine ID="line_TEXTLINE_18" HPOS="0" VPOS="1220" HEIGHT="69" WIDTH="1312">
+            <String ID="s_0018_0000" HPOS="0" VPOS="1220" HEIGHT="69" WIDTH="1312" CONTENT="· tzen Menſchen oder das gantze weſen des Menſchens" WC="0.7819"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_19" HPOS="3" VPOS="1280" HEIGHT="57" WIDTH="1310">
+          <TextLine ID="line_TEXTLINE_19" HPOS="3" VPOS="1280" HEIGHT="57" WIDTH="1310">
+            <String ID="s_0019_0000" HPOS="3" VPOS="1280" HEIGHT="57" WIDTH="1310" CONTENT="1 bedeute / Sondern figurate per Synecdochen nur etwas" WC="0.8477"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_20" HPOS="3" VPOS="1332" HEIGHT="59" WIDTH="1310">
+          <TextLine ID="line_TEXTLINE_20" HPOS="3" VPOS="1332" HEIGHT="59" WIDTH="1310">
+            <String ID="s_0020_0000" HPOS="3" VPOS="1332" HEIGHT="59" WIDTH="1310" CONTENT="1 verderbtes / vnreines / verdamptes im Menſchen /" WC="0.7914"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_21" HPOS="0" VPOS="1389" HEIGHT="51" WIDTH="1311">
+          <TextLine ID="line_TEXTLINE_21" HPOS="0" VPOS="1389" HEIGHT="51" WIDTH="1311">
+            <String ID="s_0021_0000" HPOS="0" VPOS="1389" HEIGHT="51" WIDTH="1311" CONTENT="ö welches auch wider die Schrifft vnd Lutherum / der" WC="0.8191"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_22" HPOS="0" VPOS="1440" HEIGHT="52" WIDTH="1334">
+          <TextLine ID="line_TEXTLINE_22" HPOS="0" VPOS="1440" HEIGHT="52" WIDTH="1334">
+            <String ID="s_0022_0000" HPOS="0" VPOS="1440" HEIGHT="52" WIDTH="1334" CONTENT="ö in der Vorrede vber die Epiſtel an die Roͤmer vnd" WC="0.7856"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_23" HPOS="225" VPOS="1491" HEIGHT="48" WIDTH="1089">
+          <TextLine ID="line_TEXTLINE_23" HPOS="225" VPOS="1491" HEIGHT="48" WIDTH="1089">
+            <String ID="s_0023_0000" HPOS="225" VPOS="1491" HEIGHT="48" WIDTH="1089" CONTENT="andern orten / das wort Fleiſch viel anders erkleret /" WC="0.9067"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_24" HPOS="2" VPOS="1544" HEIGHT="61" WIDTH="1313">
+          <TextLine ID="line_TEXTLINE_24" HPOS="2" VPOS="1544" HEIGHT="61" WIDTH="1313">
+            <String ID="s_0024_0000" HPOS="2" VPOS="1544" HEIGHT="61" WIDTH="1313" CONTENT="10 vnd von dem gantzen Menſchen mit Leib vnd Seel /" WC="0.7763"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_25" HPOS="212" VPOS="1592" HEIGHT="62" WIDTH="1102">
+          <TextLine ID="line_TEXTLINE_25" HPOS="212" VPOS="1592" HEIGHT="62" WIDTH="1102">
+            <String ID="s_0025_0000" HPOS="212" VPOS="1592" HEIGHT="62" WIDTH="1102" CONTENT="m t Vernunfft vnd allen Sinnen / aus wendig vnd in⸗" WC="0.7638"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_26" HPOS="0" VPOS="1646" HEIGHT="64" WIDTH="587">
+          <TextLine ID="line_TEXTLINE_26" HPOS="0" VPOS="1646" HEIGHT="64" WIDTH="587">
+            <String ID="s_0026_0000" HPOS="0" VPOS="1646" HEIGHT="64" WIDTH="587" CONTENT="„ wendig verſtehet." WC="0.8154"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_27" HPOS="0" VPOS="1708" HEIGHT="49" WIDTH="1228">
+          <TextLine ID="line_TEXTLINE_27" HPOS="0" VPOS="1708" HEIGHT="49" WIDTH="1228">
+            <String ID="s_0027_0000" HPOS="0" VPOS="1708" HEIGHT="49" WIDTH="1228" CONTENT="2 X." WC="0.2681"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_28" HPOS="1" VPOS="1769" HEIGHT="63" WIDTH="1312">
+          <TextLine ID="line_TEXTLINE_28" HPOS="1" VPOS="1769" HEIGHT="63" WIDTH="1312">
+            <String ID="s_0028_0000" HPOS="1" VPOS="1769" HEIGHT="63" WIDTH="1312" CONTENT="/ Das des Menſchen Hertz nach ſeiner Subſtantz /" WC="0.7550"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_29" HPOS="0" VPOS="1830" HEIGHT="54" WIDTH="1311">
+          <TextLine ID="line_TEXTLINE_29" HPOS="0" VPOS="1830" HEIGHT="54" WIDTH="1311">
+            <String ID="s_0029_0000" HPOS="0" VPOS="1830" HEIGHT="54" WIDTH="1311" CONTENT="t eben ein ding / vnd daſſelbe Hertz ſey / vor vnd nach" WC="0.8305"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_30" HPOS="2" VPOS="1882" HEIGHT="57" WIDTH="1313">
+          <TextLine ID="line_TEXTLINE_30" HPOS="2" VPOS="1882" HEIGHT="57" WIDTH="1313">
+            <String ID="s_0030_0000" HPOS="2" VPOS="1882" HEIGHT="57" WIDTH="1313" CONTENT="te der Wider geburt vnd vernewerugg des Heiligen" WC="0.7730"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_31" HPOS="0" VPOS="1933" HEIGHT="88" WIDTH="1312">
+          <TextLine ID="line_TEXTLINE_31" HPOS="0" VPOS="1933" HEIGHT="88" WIDTH="1312">
+            <String ID="s_0031_0000" HPOS="0" VPOS="1933" HEIGHT="88" WIDTH="1312" CONTENT="1 Geiſtes / welches auch die einfeltigen helle wort der" WC="0.8150"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="block_TEXTLINE_32" HPOS="1221" VPOS="1992" HEIGHT="48" WIDTH="93">
+          <TextLine ID="line_TEXTLINE_32" HPOS="1221" VPOS="1992" HEIGHT="48" WIDTH="93">
+            <String ID="s_0032_0000" HPOS="1221" VPOS="1992" HEIGHT="48" WIDTH="93" CONTENT="Hei⸗" WC="0.8434"/>
+          </TextLine>
+        </TextBlock>
+      </PrintSpace>
+    </Page>
+  </Layout>
+</alto>

@@ -62,12 +62,12 @@ def _create_cli_paths(tmp_path_factory):
         (
             dig.DEFAULT_UTF8_NORM,
             "[DEBUG] text normalized using 'NFC' code points for 'Cs,Ls'",
-            "[DEBUG] [1667522809_J_0001_0002](art) [Cs:39.20(5309), Ls:38.54(4383)(- 0.66)]",
+            "[DEBUG] [1667522809_J_0001_0002](art) [Cs:39.20(5308), Ls:38.54(4383)(- 0.66)]",
         ),
         (
             dipre.UC_NORMALIZATION_NFKD,
             "[DEBUG] text normalized using 'NFKD' code points for 'Cs,Ls'",
-            "[DEBUG] [1667522809_J_0001_0002](art) [Cs:39.10(5363), Ls:38.52(4437)(- 0.58)]",
+            "[DEBUG] [1667522809_J_0001_0002](art) [Cs:39.11(5362), Ls:38.52(4437)(- 0.59)]",
         ),
     ],
 )
@@ -146,7 +146,7 @@ def test_mwe_cli_data_resolving(cli_paths, capsys):
     assert std_lines[0] == "[WARN ] base 'ger_frk' and 'GT-PAGE' mismatch, aggregation might be inaccurate!"
     assert std_lines[1] == "[DEBUG] text normalized using 'NFKD' code points for 'Cs,Ls'"
     # Find the metric line (it will be in the output, exact position may vary due to aggregation logging)
-    assert any("[DEBUG] [1667522809_J_0001_0002](art) [Cs:39.10(5363), Ls:38.52(4437)(- 0.58)]" in line for line in std_lines)
+    assert any("[DEBUG] [1667522809_J_0001_0002](art) [Cs:39.11(5362), Ls:38.52(4437)(- 0.59)]" in line for line in std_lines)
 
 
 def test_single_candidate_file_cli(cli_paths, capsys):
