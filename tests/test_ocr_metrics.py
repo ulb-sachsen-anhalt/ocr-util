@@ -196,13 +196,16 @@ def test_metric_character_zd1_0002():
     src_candidate = TEST_RES_DIR / 'candidate' / 'frk_alto' / '1667522809_J_0001_0002.xml'
     src_reference = TEST_RES_DIR / 'groundtruth' / 'page' / '1667522809_J_0001_0002.art.gt.xml'
     frame_gt = digeo.get_bounding_box(src_reference)
-    raw_can, filtered_from_candidate = dipre.file_to_text(src_candidate, frame_gt)
+    raw_can, candidate_lines = dipre.file_to_text(src_candidate, frame_gt)
+    spatial_report = {}
+    dipre.file_to_text(src_candidate, frame_gt, spatial_report=spatial_report)
     raw_ref, _ = dipre.file_to_text(src_reference)
 
     normed_to_cand = rfls.normalized_similarity(raw_ref, raw_can)
     normed_to_refr = rfls.normalized_similarity(raw_can, raw_ref)
 
-    assert filtered_from_candidate == 103
+    assert candidate_lines == 103
+    assert spatial_report["excluded_words"] > 0
     assert normed_to_cand == normed_to_refr
     assert 0.3920 == pytest.approx(normed_to_cand, abs=1e-4)
 

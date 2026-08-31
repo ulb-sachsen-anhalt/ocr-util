@@ -493,9 +493,14 @@ def start_evaluation(parse_args: typing.Dict):
         print(f'[ERROR] input "{path_candidates}": invalid! exit!')
         sys.exit(1)
     if path_reference is not None:
-        path_reference = Path(path_reference)
-        if not path_reference.is_dir():
+        path_reference = Path(path_reference).absolute()
+        if not path_reference.is_dir() and not path_reference.is_file():
             print(f'[ERROR] reference "{path_reference}": invalid! exit!')
+            sys.exit(1)
+        if path_reference.is_file() and path_candidates.is_dir():
+            print(
+                "[ERROR] a reference file requires a single candidate file! exit!"
+            )
             sys.exit(1)
 
     if path_candidates and path_reference:
@@ -622,11 +627,15 @@ def start_evaluation(parse_args: typing.Dict):
 
     # match groundtruth
     if path_reference:
-        for entry in candidates:
-            gt = digev.find_groundtruth(entry, path_reference)
-            if gt:
-                entry.path_groundtruth = gt
-                entry.align_domains()
+        if path_reference.is_file():
+            candidates[0].path_groundtruth = path_reference
+            candidates[0].align_domains()
+        else:
+            for entry in candidates:
+                gt = digev.find_groundtruth(entry, path_reference)
+                if gt:
+                    entry.path_groundtruth = gt
+                    entry.align_domains()
 
     # remove all paths where no groundtruth exists
     gt_entries = [c for c in candidates if c.path_groundtruth]
@@ -720,7 +729,7 @@ def register_arguments(parser: argparse.ArgumentParser) -> None:
         "-ref",
         "--reference",
         required=False,
-        help="Root directory for Reference/Groundtruth data (optional, but necessary for most metrics)",
+        help="Root directory for Reference/Groundtruth data or a single reference file when candidates is a file (optional, but necessary for most metrics)",
     )
     parser.add_argument(
         "-v",

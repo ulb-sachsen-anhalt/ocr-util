@@ -21,7 +21,7 @@ import ocr_util.eval.metrics as digem
 
 import ocr_util.eval.model.common as dc
 
-from ocr_util.eval.geometry import get_bounding_box
+from ocr_util.eval.geometry import get_bounding_box, get_page_dimensions
 
 # Import aggregation classes from aggregation module
 from ocr_util.eval.aggregation import (
@@ -100,6 +100,7 @@ class EvalEntry:
         self.path_groundtruth: typing.Optional[Path] = None
         self.gt_type = _NOT_SET
         self.metrics = []
+        self.preprocessing_reports = []
         self.tags: typing.Dict[str, typing.Any] = {}  # Generic metadata for aggregation
 
     def align_domains(self):
@@ -258,6 +259,7 @@ class Evaluator:
 
         # evaluate metric copies
         _current_metrics = []
+        self._warn_page_dimension_mismatch(entry)
 
         for metric in self.metrics:
             # read coordinate information (if any provided)
@@ -277,6 +279,7 @@ class Evaluator:
             current.reference = Path(entry.path_groundtruth).absolute()
             current.candidate = Path(entry.path_candidate).absolute()
             current.candidate_frame = coords
+            current.geometry_disabled = self.text_mode
             # ATTENZIONE! inital access to this attribute
             # triggers preprocessing and calculation!
             _ = current.value
@@ -298,7 +301,87 @@ class Evaluator:
         )
         entry.gt_type = _normed_gt_type
         entry.metrics = _current_metrics
+        entry.preprocessing_reports = [
+            metric.preprocessing_report
+            for metric in _current_metrics
+            if metric.preprocessing_report is not None
+        ]
+        if self.verbosity >= 2:
+            self._report_entry_preprocessing(entry)
         return entry
+
+    @staticmethod
+    def _warn_page_dimension_mismatch(entry: EvalEntry) -> None:
+        """Warn when candidate and reference use different image dimensions."""
+        candidate_dimensions = get_page_dimensions(entry.path_candidate)
+        reference_dimensions = get_page_dimensions(entry.path_groundtruth)
+        if (
+            candidate_dimensions is not None
+            and reference_dimensions is not None
+            and candidate_dimensions != reference_dimensions
+        ):
+            print(
+                "[WARN ] page dimensions differ: "
+                f"candidate {candidate_dimensions[0]}x{candidate_dimensions[1]}, "
+                f"reference {reference_dimensions[0]}x{reference_dimensions[1]}; "
+                "frame filtering uses their unscaled coordinates"
+            )
+
+    @staticmethod
+    def _format_preprocessing_step(step) -> str:
+        details = step["details"]
+        detail_text = ""
+        if details:
+            detail_text = " (" + ", ".join(
+                f"{name}: {value}" for name, value in details.items()
+            ) + ")"
+        return (
+            f"{step['name']}: {step['before_count']} {step['before_unit']} -> "
+            f"{step['after_count']} {step['after_unit']}{detail_text}"
+        )
+
+    def _report_entry_preprocessing(self, entry: EvalEntry) -> None:
+        """Print the metric input basis for one concrete page or page frame."""
+        for metric in entry.metrics:
+            report = metric.preprocessing_report
+            if report is None:
+                continue
+            print(f"[DEBUG] preprocessing [{metric.label}] {report['preprocessor']}")
+            print(f"[DEBUG]   candidate: {entry.path_candidate}")
+            print(f"[DEBUG]   reference: {entry.path_groundtruth} (full page)")
+            self._report_spatial_preprocessing(report, metric)
+            for side in ("candidate", "reference"):
+                side_report = report[side]
+                print(
+                    f"[DEBUG]   {side} basis: {side_report['input_count']} "
+                    f"{side_report['input_unit']} -> {side_report['output_count']} "
+                    f"{side_report['output_unit']}"
+                )
+                for step in side_report["steps"]:
+                    print(f"[DEBUG]     {self._format_preprocessing_step(step)}")
+
+    @staticmethod
+    def _report_spatial_preprocessing(report, metric) -> None:
+        spatial = report["candidate"]["spatial"]
+        if report["geometry_disabled"]:
+            print("[DEBUG]   spatial preprocessing: geometry disabled; full page")
+        elif not spatial:
+            print("[DEBUG]   spatial preprocessing: unavailable")
+        elif spatial["mode"] == "full page":
+            print("[DEBUG]   spatial preprocessing: full page; frames match")
+        else:
+            print(
+                f"[DEBUG]   spatial preprocessing: reference frame "
+                f"{metric.candidate_frame[0]}-{metric.candidate_frame[1]}"
+            )
+            print(
+                f"[DEBUG]     candidate page frame: {spatial['candidate_page_frame']}"
+            )
+            print(
+                f"[DEBUG]     frame filtering: {spatial['total_words']} words -> "
+                f"{spatial['retained_words']} words "
+                f"({spatial['excluded_words']} excluded)"
+            )
 
     def _generate_report_candidate(self, the_entry: EvalEntry):
         try:

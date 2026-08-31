@@ -155,6 +155,34 @@ def test_evaluate_page_groundtruth_with_itself(eval_paths):
     assert 5308 == defaults[4]
 
 
+def test_evaluation_reports_preprocessing_for_concrete_entry(eval_paths, capsys):
+    """Keep preprocessing impact with the evaluated page and print it at trace level."""
+
+    eval_domain = eval_paths["alto_eval_domain"]
+    gt_domain = eval_paths["alto_gt_domain"]
+    gt_dst = eval_paths["alto_gt_dst"]
+    evaluator = digev.Evaluator(eval_domain, verbosity=2)
+    evaluator.metrics = [digem.MetricLetters(), digem.MetricWords()]
+
+    entry = digev.EvalEntry(eval_domain / _CANDIDATE_NAME, eval_domain)
+    entry.path_groundtruth = gt_dst
+    evaluator.eval_all([entry], sequential=True)
+
+    evaluated_entry = evaluator.evaluation_entries[0]
+    assert [report["preprocessor"] for report in evaluated_entry.preprocessing_reports] == [
+        "LetterPreprocessor",
+        "SimpleTokenizer",
+    ]
+    captured = capsys.readouterr().out
+    assert "[DEBUG] preprocessing [Ls] LetterPreprocessor" in captured
+    assert str(eval_domain / _CANDIDATE_NAME) in captured
+    assert "spatial preprocessing: reference frame" in captured
+    assert "frame filtering:" in captured
+    assert "remove non-letter characters" in captured
+    assert "[DEBUG] preprocessing [Ws] SimpleTokenizer" in captured
+    assert "tokenize:" in captured
+
+
 def test_evaluate_set_with_5_entries(tmp_path):
     """Simulate evaluation with 5 data sets
     * sub_dir 'eng' having 1 pair

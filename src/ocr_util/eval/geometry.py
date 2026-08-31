@@ -14,6 +14,25 @@ _XML_NS = {
 _NOT_SET = "n.a."
 
 
+def get_page_dimensions(file_path) -> typing.Optional[typing.Tuple[int, int]]:
+    """Return the declared image width and height for an ALTO or PAGE file."""
+    try:
+        root_element = ET.parse(file_path).getroot()
+    except (OSError, ET.ParseError):
+        return None
+    page_element = root_element.find(".//{*}Page")
+    if page_element is None:
+        return None
+
+    width = page_element.attrib.get("WIDTH", page_element.attrib.get("imageWidth"))
+    height = page_element.attrib.get(
+        "HEIGHT", page_element.attrib.get("imageHeight")
+    )
+    if width is None or height is None:
+        return None
+    return int(width), int(height)
+
+
 def get_bounding_box(file_path) -> typing.Optional[typing.Tuple]:
     """Get Bounding Box Data from given resource, if any exists"""
 

@@ -13,6 +13,26 @@ import ocr_util.eval.preprocessing as dipre
 from .conftest import TEST_RES_DIR
 
 
+def test_letter_preprocessor_reports_character_class_removals():
+    """Report the concrete basis and removals used by a letter metric."""
+
+    preprocessor = dipre.LetterPreprocessor("A 2!\n")
+
+    preprocessor.run()
+
+    report = preprocessor.preprocessing_report
+    assert report["input_count"] == 5
+    assert report["input_unit"] == "characters"
+    assert report["output_count"] == 1
+    assert report["output_unit"] == "characters"
+    assert report["steps"][-1]["name"] == "remove non-letter characters"
+    assert report["steps"][-1]["details"] == {
+        "whitespace": 2,
+        "punctuation": 1,
+        "digits": 1,
+    }
+
+
 # default reference
 THE_COMBINED_A_FOX = 'the á lazy brown fox jumps over the hump'
 THE_LAZY_FOX = 'the lazy brown fox jumps over the hump'

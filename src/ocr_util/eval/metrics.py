@@ -28,7 +28,9 @@ class OCRMetric:
     def __init__(self, precision=2):
         self.precision = precision
         self.preprocessor = None
+        self.preprocessing_report = None
         self.candidate_frame = None
+        self.geometry_disabled = False
         self.data_candidate = None
         self._label = None
         self._value = None
@@ -42,6 +44,7 @@ class OCRMetric:
     def candidate(self, candidate_data):
         self.data_candidate = candidate_data
         self._value = None
+        self.preprocessing_report = None
 
     @property
     def label(self):
@@ -72,6 +75,7 @@ class SimilarityMetric(OCRMetric):
     def reference(self, data_reference):
         self.data_reference = data_reference
         self._value = None
+        self.preprocessing_report = None
 
     @property
     def n_ref(self) -> int:
@@ -103,6 +107,12 @@ class SimilarityMetric(OCRMetric):
                     pre_ref.code_norm = self.code_norm
                 pre_ref.run()
                 self.data_reference = pre_ref.result
+                self.preprocessing_report = {
+                    "preprocessor": type(pre_can).__name__,
+                    "candidate": pre_can.preprocessing_report,
+                    "reference": pre_ref.preprocessing_report,
+                    "geometry_disabled": self.geometry_disabled,
+                }
             self._forward()
             if self._value is not None:
                 self._value *= 100

@@ -134,6 +134,37 @@ class Preprocessor:
 
     def __init__(self, input_data):
         self._input = input_data
+        self._input_count = None
+        self._input_unit = None
+        self._steps = []
+        self.spatial_report = None
+
+    @staticmethod
+    def _measure(value):
+        if isinstance(value, str):
+            return len(value), "characters"
+        if isinstance(value, list):
+            return len(value), "tokens"
+        if isinstance(value, set):
+            return len(value), "unique tokens"
+        return 0, "items"
+
+    def _set_input_basis(self):
+        self._input_count, self._input_unit = self._measure(self._input)
+
+    def _record_step(self, name, before, after, details=None):
+        before_count, before_unit = self._measure(before)
+        after_count, after_unit = self._measure(after)
+        self._steps.append(
+            {
+                "name": name,
+                "before_count": before_count,
+                "before_unit": before_unit,
+                "after_count": after_count,
+                "after_unit": after_unit,
+                "details": details or {},
+            }
+        )
 
     def run(self):
         """Wrap required preprocessings"""
@@ -142,6 +173,20 @@ class Preprocessor:
     def result(self):
         """get processed data"""
         return self._input
+
+    @property
+    def preprocessing_report(self):
+        """Describe the concrete metric basis and transformations applied."""
+        output_count, output_unit = self._measure(self._input)
+        return {
+            "preprocessor": type(self).__name__,
+            "input_count": self._input_count,
+            "input_unit": self._input_unit,
+            "output_count": output_count,
+            "output_unit": output_unit,
+            "steps": self._steps,
+            "spatial": self.spatial_report,
+        }
 
 
 class TextPreprocessor(Preprocessor):
@@ -157,7 +202,9 @@ class TextPreprocessor(Preprocessor):
         """Convert code points to
         required unicode form"""
 
+        before = self._input
         self._input = unicodedata.normalize(self.code_norm, self._input)
+        self._record_step(f"Unicode {self.code_norm}", before, self._input)
 
     def normalize_whitespace(self):
         """normalize line breaks and control characters to spaces.
@@ -167,16 +214,22 @@ class TextPreprocessor(Preprocessor):
         of multi-line text data from different sources (ALTO, PAGE, etc).
         """
         if isinstance(self._input, str):
+            before = self._input
             # Replace various line break sequences with spaces
             self._input = self._input.replace('\r\n', ' ')  # Windows line breaks
             self._input = self._input.replace('\r', ' ')    # Old Mac line breaks
             self._input = self._input.replace('\n', ' ')    # Unix line breaks
             self._input = self._input.replace('\v', ' ')    # Vertical tab
             self._input = self._input.replace('\f', ' ')    # Form feed
+            self._record_step("normalize line breaks", before, self._input)
 
     def run(self):
         if isinstance(self._input, Path):
-            self._input, _ = file_to_text(self._input, self.frame, self.one_liner)
+            self.spatial_report = {}
+            self._input, _ = file_to_text(
+                self._input, self.frame, self.one_liner, self.spatial_report
+            )
+        self._set_input_basis()
         self.normalize_whitespace()
         self.normalize_encoding()
 
@@ -188,9 +241,18 @@ class LetterPreprocessor(TextPreprocessor):
     def strip_chars(self):
         """remove non-letter characters"""
 
+        before = self._input
+        removed = {
+            "whitespace": sum(char in WHITESPACES for char in before),
+            "punctuation": sum(
+                char in PUNCTUATIONS and char not in WHITESPACES for char in before
+            ),
+            "digits": sum(char in DIGITS for char in before),
+        }
         self._input = self._input.translate(WHITESPACE_TRNSL)
         self._input = self._input.translate(PUNCT_TRNSL)
         self._input = self._input.translate(DIGIT_TRNSL)
+        self._record_step("remove non-letter characters", before, self._input, removed)
 
     def run(self):
         super().run()
@@ -202,9 +264,11 @@ class SimpleTokenizer(TextPreprocessor):
 
     def tokenize(self):
         """make string list"""
+        before = self._input
         self._input = (
             self._input.split() if isinstance(self._input, str) else self._input
         )
+        self._record_step("tokenize", before, self._input)
 
     def run(self):
         super().run()
@@ -223,17 +287,27 @@ class LanguageAwareTokenizer(SimpleTokenizer):
     def tokenize_to_sorted_set(self):
         """enhanced tokenizing"""
         self.tokenize()
+        before = self._input
         self._input = set(sorted(self._input))
+        self._record_step("deduplicate tokens", before, self._input)
 
     def strip_stopwords(self):
         """remove some tokens"""
+        before = self._input
         self._input = self._input - LanguageAwareTokenizer._get_stopwords(
             languages=self.languages
+        )
+        self._record_step(
+            "remove stopwords", before, self._input, {"languages": self.languages}
         )
 
     def run(self):
         if isinstance(self._input, Path):
-            self._input, _ = file_to_text(self._input, self.frame, self.one_liner)
+            self.spatial_report = {}
+            self._input, _ = file_to_text(
+                self._input, self.frame, self.one_liner, self.spatial_report
+            )
+        self._set_input_basis()
         self.normalize_encoding()
         self.tokenize_to_sorted_set()
         self.strip_stopwords()
@@ -328,11 +402,13 @@ def file_to_dict_text(file_path: str, frame=None, oneliner=False) -> typing.Tupl
     return text, len_lines
 
 
-def file_to_text(file_path, frame=None, oneliner=True) -> typing.Tuple:
+def file_to_text(file_path, frame=None, oneliner=True, spatial_report=None) -> typing.Tuple:
     """Convert file data into plain text"""
 
     try:
         top_digo: mdom.DigitalObjectTree = mmain.to_digital_object(str(file_path))
+        candidate_page_frame = top_digo.dimensions
+        requested_frame = frame
         # explicit filter frame?
         if not frame:
             frame = top_digo.dimensions
@@ -345,7 +421,18 @@ def file_to_text(file_path, frame=None, oneliner=True) -> typing.Tuple:
             ]
         frame_digo = mdom.DigitalObjectTree()
         frame_digo.dimensions = frame
-        filter_word_pieces(frame_digo, top_digo)
+        filtered_words, total_words = filter_word_pieces(frame_digo, top_digo)
+        if spatial_report is not None:
+            spatial_report.update(
+                {
+                    "mode": "full page" if requested_frame is None else "frame filtering",
+                    "requested_frame": requested_frame,
+                    "candidate_page_frame": candidate_page_frame,
+                    "total_words": total_words,
+                    "excluded_words": filtered_words,
+                    "retained_words": total_words - filtered_words,
+                }
+            )
         the_lines = _get_digos_from_digo(top_digo)
         if oneliner:
             return top_digo.transcription, len(the_lines)
@@ -360,7 +447,7 @@ def file_to_text(file_path, frame=None, oneliner=True) -> typing.Tuple:
         raise RuntimeError(f"Unexpected error for {file_path}: {exc}") from exc
 
 
-def filter_word_pieces(frame, current) -> int:
+def filter_word_pieces(frame, current) -> typing.Tuple[int, int]:
     """respect frame for current digital object
     return number of filtered elements
     """
@@ -383,7 +470,7 @@ def filter_word_pieces(frame, current) -> int:
         if _word not in frame:
             _filtered += 1
             _uplete(_word)
-    return _filtered
+    return _filtered, len(_words)
 
 
 def _uplete(curr: mdom.DigitalObjectTree):

@@ -34,6 +34,7 @@ def _create_cli_paths(tmp_path_factory):
     single_candidate_dir = base_dir / 'single_candidate' / _DOMAIN_LABEL
     single_candidate_file = single_candidate_dir / '1667522809_J_0001_0002.xml'
     single_reference_dir = base_dir / 'single_reference' / _DOMAIN_LABEL
+    single_reference_file = single_reference_dir / '1667522809_J_0001_0002.art.gt.xml'
     mets_file = base_dir / 'reference' / 'test_mets.xml'
 
     shutil.copytree(src_candidates, candidate_dir)
@@ -52,6 +53,7 @@ def _create_cli_paths(tmp_path_factory):
         'reference_gt_page_dir': reference_gt_page_dir,
         'single_candidate_file': single_candidate_file,
         'single_reference_dir': single_reference_dir,
+        'single_reference_file': single_reference_file,
         'mets_file': mets_file,
     }
 
@@ -185,6 +187,45 @@ def test_single_candidate_file_cli(cli_paths, capsys):
     assert std_lines[0] == "[DEBUG] text normalized using 'NFC' code points for 'Cs,Ls'"
     # Verify the specific file appears in the output
     assert any('1667522809_J_0001_0002' in line for line in std_lines)
+
+
+def test_single_candidate_and_reference_file_cli(cli_paths, capsys):
+    """Evaluate an explicitly selected candidate/reference page pair."""
+
+    candidate_file = cli_paths['single_candidate_file']
+    reference_file = cli_paths['single_reference_file']
+    assert candidate_file.is_file()
+    assert reference_file.is_file()
+
+    results = dig.start_evaluation({
+        "candidates": candidate_file,
+        "reference": reference_file,
+        "metrics": "Cs",
+        "verbosity": 2,
+        "utf8": dig.DEFAULT_UTF8_NORM,
+        "sequential": True,
+    })
+
+    assert len(results) > 0
+    captured = capsys.readouterr().out
+    assert str(candidate_file) in captured
+    assert str(reference_file) in captured
+
+
+def test_reference_file_requires_single_candidate_file(cli_paths):
+    """Reject mapping one explicitly supplied reference file to many candidates."""
+
+    with pytest.raises(SystemExit) as excinfo:
+        dig.start_evaluation({
+            "candidates": cli_paths['candidate_dir'],
+            "reference": cli_paths['single_reference_file'],
+            "metrics": "Cs",
+            "verbosity": 0,
+            "utf8": dig.DEFAULT_UTF8_NORM,
+            "sequential": True,
+        })
+
+    assert excinfo.value.code == 1
 
 
 def test_cli_with_mets_mods_aggregation(cli_paths, capsys):

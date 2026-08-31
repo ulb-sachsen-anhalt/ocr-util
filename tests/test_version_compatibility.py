@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 import ocr_util.eval as digev
+import ocr_util.eval.geometry as digeo
 import ocr_util.eval.metrics as digem
 import ocr_util.eval.model.main as mmain
 
@@ -21,6 +22,27 @@ URN = "urn+nbn+de+gbv+3+1-119201541511222-567754766-13-fp-0049"
 GT_FILE = f"{TEST_RES_DIR}/versions/{URN}.gt.xml"
 LEGACY_FILE = f"{TEST_RES_DIR}/versions/{URN}.legacy.xml"
 RECENT_FILE = f"{TEST_RES_DIR}/versions/{URN}.recent.xml"
+
+
+def test_recent_candidate_and_groundtruth_have_mismatched_page_dimensions():
+    """Expose incompatible page coordinate systems before spatial evaluation."""
+
+    assert digeo.get_page_dimensions(RECENT_FILE) == (2300, 2716)
+    assert digeo.get_page_dimensions(GT_FILE) == (2250, 2774)
+
+
+def test_evaluation_warns_for_mismatched_page_dimensions(capsys):
+    """Warn before reference coordinates filter a differently scaled candidate."""
+
+    evaluator = digev.Evaluator(Path(RECENT_FILE).parent)
+    evaluator.metrics = [digem.MetricChars()]
+    entry = digev.EvalEntry(Path(RECENT_FILE))
+    entry.path_groundtruth = Path(GT_FILE)
+
+    evaluator.eval_all([entry], sequential=True)
+
+    captured = capsys.readouterr().out
+    assert "[WARN ] page dimensions differ: candidate 2300x2716, reference 2250x2774" in captured
 
 
 def test_legacy_and_recent_extract_identical_text():
