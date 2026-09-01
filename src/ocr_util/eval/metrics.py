@@ -11,6 +11,7 @@ from nltk.metrics import recall, f_measure
 import rapidfuzz.distance.Levenshtein as rfls
 
 import ocr_util.eval.preprocessing as dipre
+from ocr_util.eval import constants as eval_constants
 from ocr_util.eval.dictionary_metrics.common import LANGUAGE_KEY_DEFAULT
 from ocr_util.eval.dictionary_metrics.language_tool.LanguageTool import LanguageTool
 
@@ -108,10 +109,10 @@ class SimilarityMetric(OCRMetric):
                 pre_ref.run()
                 self.data_reference = pre_ref.result
                 self.preprocessing_report = {
-                    "preprocessor": type(pre_can).__name__,
-                    "candidate": pre_can.preprocessing_report,
-                    "reference": pre_ref.preprocessing_report,
-                    "geometry_disabled": self.geometry_disabled,
+                    eval_constants.REPORT_PREPROCESSOR: type(pre_can).__name__,
+                    eval_constants.REPORT_CANDIDATE: pre_can.preprocessing_report,
+                    eval_constants.REPORT_REFERENCE: pre_ref.preprocessing_report,
+                    eval_constants.REPORT_GEOMETRY_DISABLED: self.geometry_disabled,
                 }
             self._forward()
             if self._value is not None:

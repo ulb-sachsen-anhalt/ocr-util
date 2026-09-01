@@ -9,6 +9,8 @@ from pathlib import Path
 import nltk
 import nltk.corpus as nltk_corp
 
+from ocr_util.eval import constants as eval_constants
+
 import ocr_util.eval.model.common as mcommon
 import ocr_util.eval.model.main as mmain
 import ocr_util.eval.model.digital_object_model as mdom
@@ -157,12 +159,12 @@ class Preprocessor:
         after_count, after_unit = self._measure(after)
         self._steps.append(
             {
-                "name": name,
-                "before_count": before_count,
-                "before_unit": before_unit,
-                "after_count": after_count,
-                "after_unit": after_unit,
-                "details": details or {},
+                eval_constants.STEP_NAME: name,
+                eval_constants.STEP_BEFORE_COUNT: before_count,
+                eval_constants.STEP_BEFORE_UNIT: before_unit,
+                eval_constants.STEP_AFTER_COUNT: after_count,
+                eval_constants.STEP_AFTER_UNIT: after_unit,
+                eval_constants.STEP_DETAILS: details or {},
             }
         )
 
@@ -179,13 +181,13 @@ class Preprocessor:
         """Describe the concrete metric basis and transformations applied."""
         output_count, output_unit = self._measure(self._input)
         return {
-            "preprocessor": type(self).__name__,
-            "input_count": self._input_count,
-            "input_unit": self._input_unit,
-            "output_count": output_count,
-            "output_unit": output_unit,
-            "steps": self._steps,
-            "spatial": self.spatial_report,
+            eval_constants.REPORT_PREPROCESSOR: type(self).__name__,
+            eval_constants.REPORT_INPUT_COUNT: self._input_count,
+            eval_constants.REPORT_INPUT_UNIT: self._input_unit,
+            eval_constants.REPORT_OUTPUT_COUNT: output_count,
+            eval_constants.REPORT_OUTPUT_UNIT: output_unit,
+            eval_constants.REPORT_STEPS: self._steps,
+            eval_constants.REPORT_SPATIAL: self.spatial_report,
         }
 
 
@@ -421,16 +423,18 @@ def file_to_text(file_path, frame=None, oneliner=True, spatial_report=None) -> t
             ]
         frame_digo = mdom.DigitalObjectTree()
         frame_digo.dimensions = frame
-        filtered_words, total_words = filter_word_pieces(frame_digo, top_digo)
+        filtered_words, total_words = filter_pieces(frame_digo, top_digo)
         if spatial_report is not None:
             spatial_report.update(
                 {
-                    "mode": "full page" if requested_frame is None else "frame filtering",
-                    "requested_frame": requested_frame,
-                    "candidate_page_frame": candidate_page_frame,
-                    "total_words": total_words,
-                    "excluded_words": filtered_words,
-                    "retained_words": total_words - filtered_words,
+                    eval_constants.SPATIAL_MODE: "full page"
+                    if requested_frame is None
+                    else "frame filtering",
+                    eval_constants.SPATIAL_REQUESTED_FRAME: requested_frame,
+                    eval_constants.SPATIAL_CANDIDATE_PAGE_FRAME: candidate_page_frame,
+                    eval_constants.SPATIAL_TOTAL_TOKEN: total_words,
+                    eval_constants.SPATIAL_EXCLUDED_TOKEN: f"{len(filtered_words)}: ({', '.join(filtered_words)})",
+                    eval_constants.SPATIAL_RETAINED_TOKEN: total_words - len(filtered_words),
                 }
             )
         the_lines = _get_digos_from_digo(top_digo)
@@ -447,11 +451,11 @@ def file_to_text(file_path, frame=None, oneliner=True, spatial_report=None) -> t
         raise RuntimeError(f"Unexpected error for {file_path}: {exc}") from exc
 
 
-def filter_word_pieces(frame, current) -> typing.Tuple[int, int]:
+def filter_pieces(frame, current) -> typing.Tuple[typing.List, int]:
     """respect frame for current digital object
-    return number of filtered elements
+    return information about filtered elements
     """
-    _filtered = 0
+    _filtered = []
     _tmp_stack = []
     _total_stack = []
     # stack all items
@@ -468,13 +472,14 @@ def filter_word_pieces(frame, current) -> typing.Tuple[int, int]:
     # check for each word piece
     for _word in _words:
         if _word not in frame:
-            _filtered += 1
+            _filtered.append(_word.transcription)
             _uplete(_word)
     return _filtered, len(_words)
 
 
 def _uplete(curr: mdom.DigitalObjectTree):
-    if len(curr.children) == 0 and curr.level < mdom.DigitalObjectLevel.PAGE:
+    if len(curr.children) == 0 and curr.level < mdom.DigitalObjectLevel.PAGE \
+        and curr.parent is not None:
         _pa: mdom.DigitalObjectTree = curr.parent
         _pa.remove_children(curr)
         _uplete(_pa)

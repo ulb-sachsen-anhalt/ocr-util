@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 
 import ocr_util.eval.metrics as digem
+from ocr_util.eval import constants as eval_constants
 
 import ocr_util.eval.model.common as dc
 
@@ -329,15 +330,18 @@ class Evaluator:
 
     @staticmethod
     def _format_preprocessing_step(step) -> str:
-        details = step["details"]
+        details = step[eval_constants.STEP_DETAILS]
         detail_text = ""
         if details:
             detail_text = " (" + ", ".join(
                 f"{name}: {value}" for name, value in details.items()
             ) + ")"
         return (
-            f"{step['name']}: {step['before_count']} {step['before_unit']} -> "
-            f"{step['after_count']} {step['after_unit']}{detail_text}"
+            f"{step[eval_constants.STEP_NAME]}: "
+            f"{step[eval_constants.STEP_BEFORE_COUNT]} "
+            f"{step[eval_constants.STEP_BEFORE_UNIT]} -> "
+            f"{step[eval_constants.STEP_AFTER_COUNT]} "
+            f"{step[eval_constants.STEP_AFTER_UNIT]}{detail_text}"
         )
 
     def _report_entry_preprocessing(self, entry: EvalEntry) -> None:
@@ -346,28 +350,38 @@ class Evaluator:
             report = metric.preprocessing_report
             if report is None:
                 continue
-            print(f"[DEBUG] preprocessing [{metric.label}] {report['preprocessor']}")
+            print(
+                f"[DEBUG] preprocessing [{metric.label}] "
+                f"{report[eval_constants.REPORT_PREPROCESSOR]}"
+            )
             print(f"[DEBUG]   candidate: {entry.path_candidate}")
             print(f"[DEBUG]   reference: {entry.path_groundtruth} (full page)")
             self._report_spatial_preprocessing(report, metric)
-            for side in ("candidate", "reference"):
+            for side in (
+                eval_constants.REPORT_CANDIDATE,
+                eval_constants.REPORT_REFERENCE,
+            ):
                 side_report = report[side]
                 print(
-                    f"[DEBUG]   {side} basis: {side_report['input_count']} "
-                    f"{side_report['input_unit']} -> {side_report['output_count']} "
-                    f"{side_report['output_unit']}"
+                    f"[DEBUG]   {side} basis: "
+                    f"{side_report[eval_constants.REPORT_INPUT_COUNT]} "
+                    f"{side_report[eval_constants.REPORT_INPUT_UNIT]} -> "
+                    f"{side_report[eval_constants.REPORT_OUTPUT_COUNT]} "
+                    f"{side_report[eval_constants.REPORT_OUTPUT_UNIT]}"
                 )
-                for step in side_report["steps"]:
+                for step in side_report[eval_constants.REPORT_STEPS]:
                     print(f"[DEBUG]     {self._format_preprocessing_step(step)}")
 
     @staticmethod
     def _report_spatial_preprocessing(report, metric) -> None:
-        spatial = report["candidate"]["spatial"]
-        if report["geometry_disabled"]:
+        spatial = report[eval_constants.REPORT_CANDIDATE][
+            eval_constants.REPORT_SPATIAL
+        ]
+        if report[eval_constants.REPORT_GEOMETRY_DISABLED]:
             print("[DEBUG]   spatial preprocessing: geometry disabled; full page")
         elif not spatial:
             print("[DEBUG]   spatial preprocessing: unavailable")
-        elif spatial["mode"] == "full page":
+        elif spatial[eval_constants.SPATIAL_MODE] == "full page":
             print("[DEBUG]   spatial preprocessing: full page; frames match")
         else:
             print(
@@ -375,12 +389,14 @@ class Evaluator:
                 f"{metric.candidate_frame[0]}-{metric.candidate_frame[1]}"
             )
             print(
-                f"[DEBUG]     candidate page frame: {spatial['candidate_page_frame']}"
+                f"[DEBUG]     candidate page frame: "
+                f"{spatial[eval_constants.SPATIAL_CANDIDATE_PAGE_FRAME]}"
             )
             print(
-                f"[DEBUG]     frame filtering: {spatial['total_words']} words -> "
-                f"{spatial['retained_words']} words "
-                f"({spatial['excluded_words']} excluded)"
+                f"[DEBUG]     frame filtering tokens: "
+                f"{spatial[eval_constants.SPATIAL_TOTAL_TOKEN]} -> "
+                f"{spatial[eval_constants.SPATIAL_RETAINED_TOKEN]} "
+                f"({spatial[eval_constants.SPATIAL_EXCLUDED_TOKEN]} excluded)"
             )
 
     def _generate_report_candidate(self, the_entry: EvalEntry):

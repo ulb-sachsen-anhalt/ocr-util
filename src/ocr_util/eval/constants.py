@@ -1,0 +1,27 @@
+"""Shared dictionary keys for evaluation report structures."""
+
+REPORT_PREPROCESSOR = "preprocessor"
+REPORT_CANDIDATE = "candidate"
+REPORT_REFERENCE = "reference"
+REPORT_GEOMETRY_DISABLED = "geometry_disabled"
+
+REPORT_INPUT_COUNT = "input_count"
+REPORT_INPUT_UNIT = "input_unit"
+REPORT_OUTPUT_COUNT = "output_count"
+REPORT_OUTPUT_UNIT = "output_unit"
+REPORT_STEPS = "steps"
+REPORT_SPATIAL = "spatial"
+
+STEP_NAME = "name"
+STEP_BEFORE_COUNT = "before_count"
+STEP_BEFORE_UNIT = "before_unit"
+STEP_AFTER_COUNT = "after_count"
+STEP_AFTER_UNIT = "after_unit"
+STEP_DETAILS = "details"
+
+SPATIAL_MODE = "mode"
+SPATIAL_REQUESTED_FRAME = "requested_frame"
+SPATIAL_CANDIDATE_PAGE_FRAME = "candidate_page_frame"
+SPATIAL_TOTAL_TOKEN = "total"
+SPATIAL_EXCLUDED_TOKEN = "excluded"
+SPATIAL_RETAINED_TOKEN = "retained"

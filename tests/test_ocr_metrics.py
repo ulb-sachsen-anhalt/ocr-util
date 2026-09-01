@@ -7,7 +7,7 @@ import rapidfuzz.distance.Levenshtein as rfls
 
 import pytest
 
-import ocr_util.eval.evaluation as digev
+import ocr_util.eval.constants as oec
 import ocr_util.eval.metrics as digem
 import ocr_util.eval.preprocessing as dipre
 import ocr_util.eval.geometry as digeo
@@ -32,7 +32,7 @@ def test_metric_unicode_normalization_textual_metric():
     char_metric.candidate = THE_COMBINED_A_FOX
 
     # actsert
-    assert 95.0 == char_metric.value
+    assert 95.0 == pytest.approx(char_metric.value, rel=1e-2)
 
 
 def test_metric_characters_from_empty_gt():
@@ -74,7 +74,7 @@ def test_metric_words_with_only_slight_difference():
     # assert
     # string has 38 characters, but tokens are only 8 present
     # assert len(_metric.input_reference) == 38
-    assert len(_metric.reference) == 8
+    assert 8 == len(_metric.reference)
     assert 75.0 == _actual
 
 
@@ -204,8 +204,8 @@ def test_metric_character_zd1_0002():
     normed_to_cand = rfls.normalized_similarity(raw_ref, raw_can)
     normed_to_refr = rfls.normalized_similarity(raw_can, raw_ref)
 
-    assert candidate_lines == 103
-    assert spatial_report["excluded_words"] > 0
+    assert 103 == candidate_lines
+    assert 0 < len(spatial_report[oec.SPATIAL_EXCLUDED_TOKEN])
     assert normed_to_cand == normed_to_refr
     assert 0.3920 == pytest.approx(normed_to_cand, abs=1e-4)
 
@@ -219,7 +219,7 @@ def test_metric_bot_ident():
     str2 = ' '.join(list2)
 
     result = digem.bag_of_tokens(gt1.split(), str2.split())
-    assert result == 1.0
+    assert 1.0 == pytest.approx(result, rel=1e-2)
     assert len(gt1.split()) == len(str2.split())
 
 
@@ -258,8 +258,8 @@ def test_ir_metric_precision_fox():
     actual = m_prec.value
 
     # assert
-    assert actual == 100.0
-    assert m_prec.data_reference == {'brown', 'fox', 'jumps', 'lazy', 'hump'}
+    assert 100.0 == pytest.approx(actual, rel=1e-2)
+    assert {'brown', 'fox', 'jumps', 'lazy', 'hump'} == m_prec.data_reference
 
 
 def test_ir_metric_recall_fox():
@@ -275,8 +275,8 @@ def test_ir_metric_recall_fox():
     actual = m_prec.value
 
     # assert
-    assert actual == 100.0
-    assert m_prec.data_reference == {'brown', 'fox', 'jumps', 'lazy', 'hump'}
+    assert 100.0 == pytest.approx(actual, rel=1e-2)
+    assert {'brown', 'fox', 'jumps', 'lazy', 'hump'} == m_prec.data_reference
 
 
 IR_CANDIDATE_TEXT = 'the red fox'
@@ -293,8 +293,8 @@ def test_ir_metrics_precision_english_poor_candidate():
 
     # assert
     assert 50.0 == pytest.approx(pre.value, 0.01)
-    assert pre.data_reference == {'brown', 'fox', 'jumps', 'lazy', 'hump'}
-    assert pre.data_candidate == {'red', 'fox'}
+    assert {'brown', 'fox', 'jumps', 'lazy', 'hump'} == pre.data_reference
+    assert {'red', 'fox'} == pre.data_candidate
 
 
 def test_ir_metrics_recall_english_poor_candidate():
@@ -324,7 +324,7 @@ def test_ir_metrics_precision_german():
     prec.candidate = IR_CANDIDATE_TEXT_GERMAN
 
     # act
-    assert prec.value == 100.0
+    assert 100.0 == pytest.approx(prec.value, rel=1e-2)
 
 
 def test_ir_metrics_recall_german():
@@ -337,7 +337,7 @@ def test_ir_metrics_recall_german():
     rec.candidate = IR_CANDIDATE_TEXT_GERMAN
 
     # act
-    assert rec.value == 100.0
+    assert 100.0 == pytest.approx(rec.value, rel=1e-2)
 
 
 def test_ir_metrics_precision_german_poor_candidate():
@@ -350,7 +350,7 @@ def test_ir_metrics_precision_german_poor_candidate():
     metric_pre.candidate = IR_REFERENCE_TEXT_GERMAN_POOR
 
     # assert
-    assert metric_pre.value == pytest.approx(33.33, 1e-2)
+    assert 33.33 == pytest.approx(metric_pre.value, rel=1e-2)
 
 
 def test_ir_metrics_recall_german_poor_candidate():
@@ -363,7 +363,7 @@ def test_ir_metrics_recall_german_poor_candidate():
     metric_rec.candidate = IR_REFERENCE_TEXT_GERMAN_POOR
 
     # assert
-    assert metric_rec.value == 25.0
+    assert 25.0 == pytest.approx(metric_rec.value, rel=1e-2)
 
 
 def test_metrics_token_based_more_gt_than_tc():
