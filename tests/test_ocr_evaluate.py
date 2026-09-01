@@ -177,7 +177,7 @@ def test_evaluation_reports_preprocessing_for_concrete_entry(eval_paths, capsys)
     assert "[DEBUG] preprocessing [Ls] LetterPreprocessor" in captured
     assert str(eval_domain / _CANDIDATE_NAME) in captured
     assert "spatial preprocessing: reference frame" in captured
-    assert "frame filtering:" in captured
+    assert "frame filtering tokens:" in captured
     assert "remove non-letter characters" in captured
     assert "[DEBUG] preprocessing [Ws] SimpleTokenizer" in captured
     assert "tokenize:" in captured
