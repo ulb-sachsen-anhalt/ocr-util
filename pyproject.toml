@@ -74,7 +74,6 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --tb=short --cov-report=xml"
 
 [tool.coverage.run]
 source = ["ocr_util"]

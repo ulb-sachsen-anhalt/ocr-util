@@ -324,7 +324,7 @@ class Evaluator:
                 "[WARN ] page dimensions differ: "
                 f"candidate {candidate_dimensions[0]}x{candidate_dimensions[1]}, "
                 f"reference {reference_dimensions[0]}x{reference_dimensions[1]}; "
-                "frame filtering uses their unscaled coordinates"
+                f"frame filtering uses coordinates from {entry.path_candidate}"
             )
 
     @staticmethod
