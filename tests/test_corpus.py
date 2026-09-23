@@ -234,9 +234,7 @@ def test_gt2mets_initialization_existing_output_dir(
 
 @unittest.mock.patch("ocr_util.corpus.generate_corpus.Corpus")
 @unittest.mock.patch("ocr_util.corpus.generate_corpus.cc.GroundtruthFile")
-def test_gt2mets_run_creates_directories(
-    mock_gt_resources_class, mock_corpus_file_class, mock_gt_files, tmp_path
-):
+def test_gt2mets_run_creates_directories(mock_gt_resources_class, mock_corpus_file_class, mock_gt_files, tmp_path):
     """Test that main workflow creates necessary directories
     mind the adopted monkey patch target with alias in file - works!
     """
@@ -329,9 +327,7 @@ def test_cli_groundtruth_corpus_existing_output_dir(mock_gt_files, mock_output_d
 
 
 @unittest.mock.patch("ocr_util.cli.gc.generate")
-def test_cli_groundtruth_corpus_with_verbosity(
-    mock_generate, mock_gt_files, mock_output_dir, capsys
-):
+def test_cli_groundtruth_corpus_with_verbosity(mock_generate, mock_gt_files, mock_output_dir, capsys):
     """Test CLI with verbosity flag"""
     # act
     with unittest.mock.patch(
@@ -353,9 +349,7 @@ def test_cli_groundtruth_corpus_with_verbosity(
 
 
 @unittest.mock.patch("ocr_util.cli.gc.generate")
-def test_cli_groundtruth_corpus_with_limit(
-    mock_generate, mock_gt_files, mock_output_dir
-):
+def test_cli_groundtruth_corpus_with_limit(mock_generate, mock_gt_files, mock_output_dir):
     """Test CLI with limit parameter"""
     # act
     with unittest.mock.patch(
@@ -381,9 +375,7 @@ def test_cli_groundtruth_corpus_with_limit(
 
 
 @unittest.mock.patch("ocr_util.cli.gc.generate")
-def test_cli_groundtruth_corpus_with_custom_temp_dir(
-    mock_generate, mock_gt_files, mock_output_dir, tmp_path
-):
+def test_cli_groundtruth_corpus_with_custom_temp_dir(mock_generate, mock_gt_files, mock_output_dir, tmp_path):
     """Test CLI with custom temp directory"""
     custom_temp = tmp_path / "custom_temp"
 
@@ -409,9 +401,7 @@ def test_cli_groundtruth_corpus_with_custom_temp_dir(
 
 
 @unittest.mock.patch("ocr_util.cli.gc.generate")
-def test_cli_groundtruth_corpus_exception_handling(
-    mock_generate, mock_gt_files, mock_output_dir, capsys
-):
+def test_cli_groundtruth_corpus_exception_handling(mock_generate, mock_gt_files, mock_output_dir, capsys):
     """Test CLI exception handling when corpus generation fails."""
     # arrange
     mock_generate.side_effect = Exception("Test error message")
@@ -433,8 +423,7 @@ def test_cli_groundtruth_corpus_exception_handling(
 
 
 @unittest.mock.patch("ocr_util.cli.gc.generate")
-def test_cli_groundtruth_corpus_multiple_verbosity_flags(
-    mock_generate, mock_gt_files, mock_output_dir):
+def test_cli_groundtruth_corpus_multiple_verbosity_flags(mock_generate, mock_gt_files, mock_output_dir):
     """Test CLI with multiple verbosity flags (-vv)"""
     # act
     with unittest.mock.patch(

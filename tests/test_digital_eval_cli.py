@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """OCR Evaluation Test Module"""
+
 # pylint: disable=protected-access
 
 import shutil
@@ -13,29 +14,28 @@ import ocr_util.eval.preprocessing as dipre
 
 from .conftest import TEST_RES_DIR
 
+_DOMAIN_LABEL = "ger_frk"
 
-_DOMAIN_LABEL = 'ger_frk'
 
-
-@pytest.fixture(name='cli_paths', scope='module')
+@pytest.fixture(name="cli_paths", scope="module")
 def _create_cli_paths(tmp_path_factory):
     """Prepare reusable candidate/reference fixtures for CLI tests."""
 
-    src_candidates = TEST_RES_DIR / 'candidate' / 'frk_alto'
-    src_reference = TEST_RES_DIR / 'groundtruth' / 'page'
-    src_mets = TEST_RES_DIR / 'test_mets.xml'
-    src_candidate_file = src_candidates / '1667522809_J_0001_0002.xml'
+    src_candidates = TEST_RES_DIR / "candidate" / "frk_alto"
+    src_reference = TEST_RES_DIR / "groundtruth" / "page"
+    src_mets = TEST_RES_DIR / "test_mets.xml"
+    src_candidate_file = src_candidates / "1667522809_J_0001_0002.xml"
 
-    base_dir = tmp_path_factory.mktemp('cli_test_data')
+    base_dir = tmp_path_factory.mktemp("cli_test_data")
 
-    candidate_dir = base_dir / 'candidate' / _DOMAIN_LABEL
-    reference_dir = base_dir / 'reference' / _DOMAIN_LABEL
-    reference_gt_page_dir = base_dir / 'reference' / _DOMAIN_LABEL / 'GT-PAGE'
-    single_candidate_dir = base_dir / 'single_candidate' / _DOMAIN_LABEL
-    single_candidate_file = single_candidate_dir / '1667522809_J_0001_0002.xml'
-    single_reference_dir = base_dir / 'single_reference' / _DOMAIN_LABEL
-    single_reference_file = single_reference_dir / '1667522809_J_0001_0002.art.gt.xml'
-    mets_file = base_dir / 'reference' / 'test_mets.xml'
+    candidate_dir = base_dir / "candidate" / _DOMAIN_LABEL
+    reference_dir = base_dir / "reference" / _DOMAIN_LABEL
+    reference_gt_page_dir = base_dir / "reference" / _DOMAIN_LABEL / "GT-PAGE"
+    single_candidate_dir = base_dir / "single_candidate" / _DOMAIN_LABEL
+    single_candidate_file = single_candidate_dir / "1667522809_J_0001_0002.xml"
+    single_reference_dir = base_dir / "single_reference" / _DOMAIN_LABEL
+    single_reference_file = single_reference_dir / "1667522809_J_0001_0002.art.gt.xml"
+    mets_file = base_dir / "reference" / "test_mets.xml"
 
     shutil.copytree(src_candidates, candidate_dir)
     shutil.copytree(src_reference, reference_dir)
@@ -48,18 +48,18 @@ def _create_cli_paths(tmp_path_factory):
     shutil.copy(src_mets, mets_file)
 
     return {
-        'candidate_dir': candidate_dir,
-        'reference_dir': reference_dir,
-        'reference_gt_page_dir': reference_gt_page_dir,
-        'single_candidate_file': single_candidate_file,
-        'single_reference_dir': single_reference_dir,
-        'single_reference_file': single_reference_file,
-        'mets_file': mets_file,
+        "candidate_dir": candidate_dir,
+        "reference_dir": reference_dir,
+        "reference_gt_page_dir": reference_gt_page_dir,
+        "single_candidate_file": single_candidate_file,
+        "single_reference_dir": single_reference_dir,
+        "single_reference_file": single_reference_file,
+        "mets_file": mets_file,
     }
 
 
 @pytest.mark.parametrize(
-    'utf8_norm, expected_norm_line, expected_metric_line',
+    "utf8_norm, expected_norm_line, expected_metric_line",
     [
         (
             dig.DEFAULT_UTF8_NORM,
@@ -80,37 +80,40 @@ def test_mwe_cli_norm_variants(
     expected_norm_line,
     expected_metric_line,
 ):
-    """Minimum working example CLI 
+    """Minimum working example CLI
     to fix *real* outcomes when playing with
     metrics implementations
 
     Match five candidates from subdir 'ger_frk' with
-    total 13 references of according gt-subdir to 
+    total 13 references of according gt-subdir to
     creates 4 default evaluation results (Ls,Cs)
     (no reference for candiate 1667522809_J_0001_0256_corrupt.xml)
     """
 
     # arrange
     dig.VERBOSITY = 1
-    dst_candidates = cli_paths['candidate_dir']
-    dst_reference = cli_paths['reference_dir']
+    dst_candidates = cli_paths["candidate_dir"]
+    dst_reference = cli_paths["reference_dir"]
 
     # assert final path segments do match by name frk_alto == frk_alto
     assert _DOMAIN_LABEL == dst_candidates.name
     assert _DOMAIN_LABEL == dst_reference.name
 
     # act
-    cli_args = {"candidates": dst_candidates, "reference": dst_reference,
-                "metrics": dig.DEFAULT_OCR_METRICS,
-                "verbosity": 1,
-                "utf8": utf8_norm,
-                "sequential": True}
+    cli_args = {
+        "candidates": dst_candidates,
+        "reference": dst_reference,
+        "metrics": dig.DEFAULT_OCR_METRICS,
+        "verbosity": 1,
+        "utf8": utf8_norm,
+        "sequential": True,
+    }
     eval_results = dig.start_evaluation(cli_args)
 
     # assert
     assert len(eval_results) == 4
     captured = capsys.readouterr().out
-    std_lines = captured.split('\n')
+    std_lines = captured.split("\n")
     assert len(std_lines) >= 13  # now includes aggregation strategy debug lines
     assert std_lines[0] == expected_norm_line
     assert str(std_lines[1]).startswith('[DEBUG] from "5" filtered "3" candidates')
@@ -119,60 +122,68 @@ def test_mwe_cli_norm_variants(
 
 
 def test_mwe_cli_data_resolving(cli_paths, capsys):
-    """Minimum working example CLI 
+    """Minimum working example CLI
     to inspect behavior for intermediate missmatches
     => OCR-D GT-PAGE directory
     """
 
     # arrange
     dig.VERBOSITY = 1
-    dst_candidates = cli_paths['candidate_dir']
-    dst_reference = cli_paths['reference_gt_page_dir']
+    dst_candidates = cli_paths["candidate_dir"]
+    dst_reference = cli_paths["reference_gt_page_dir"]
 
     # assert final path segments do match by name frk_alto == frk_alto
     assert _DOMAIN_LABEL == dst_candidates.name
 
     # act
-    cli_args = {"candidates": dst_candidates, "reference": dst_reference,
-                "metrics": dig.DEFAULT_OCR_METRICS,
-                "verbosity": 1,
-                "utf8": dipre.UC_NORMALIZATION_NFKD,
-                "sequential": True}
+    cli_args = {
+        "candidates": dst_candidates,
+        "reference": dst_reference,
+        "metrics": dig.DEFAULT_OCR_METRICS,
+        "verbosity": 1,
+        "utf8": dipre.UC_NORMALIZATION_NFKD,
+        "sequential": True,
+    }
     eval_results = dig.start_evaluation(cli_args)
 
     # assert
     assert len(eval_results) == 4
     captured = capsys.readouterr().out
-    std_lines = captured.split('\n')
+    std_lines = captured.split("\n")
     assert len(std_lines) >= 14  # now includes aggregation strategy debug lines
     assert std_lines[0] == "[WARN ] base 'ger_frk' and 'GT-PAGE' mismatch, aggregation might be inaccurate!"
     assert std_lines[1] == "[DEBUG] text normalized using 'NFKD' code points for 'Cs,Ls'"
     # Find the metric line (it will be in the output, exact position may vary due to aggregation logging)
-    assert any("[DEBUG] [1667522809_J_0001_0002](art) [Cs:39.11(5362), Ls:38.52(4437)(- 0.59)]" in line for line in std_lines)
+    assert any(
+        "[DEBUG] [1667522809_J_0001_0002](art) [Cs:39.11(5362), Ls:38.52(4437)(- 0.59)]" in line for line in std_lines
+    )
 
 
 def test_single_candidate_file_cli(cli_paths, capsys):
     """Test CLI with a single candidate file as argument
-    
+
     Ensures that a single candidate file can be passed directly
     instead of a directory and is processed correctly.
     """
 
     # arrange
     dig.VERBOSITY = 1
-    dst_candidate_file = cli_paths['single_candidate_file']
-    dst_reference = cli_paths['single_reference_dir']
+    dst_candidate_file = cli_paths["single_candidate_file"]
+    dst_reference = cli_paths["single_reference_dir"]
 
     # assert file exists
     assert dst_candidate_file.is_file()
     assert dst_reference.is_dir()
 
     # act - pass single file as candidates argument
-    cli_args = {"candidates": dst_candidate_file, "reference": dst_reference,
-                "metrics": dig.DEFAULT_OCR_METRICS,
-                "verbosity": 1,
-                "utf8": dig.DEFAULT_UTF8_NORM,
-                "sequential": True}
+    cli_args = {
+        "candidates": dst_candidate_file,
+        "reference": dst_reference,
+        "metrics": dig.DEFAULT_OCR_METRICS,
+        "verbosity": 1,
+        "utf8": dig.DEFAULT_UTF8_NORM,
+        "sequential": True,
+    }
     eval_results = dig.start_evaluation(cli_args)
 
     # assert - should process single file and match with reference
@@ -181,30 +192,32 @@ def test_single_candidate_file_cli(cli_paths, capsys):
     assert len(eval_results) > 0
     # Check that the specific file was processed by checking eval_keys
     eval_keys = [result.eval_key for result in eval_results]
-    assert any('ger_frk' in key or '1667522809_J_0001_0002' in key for key in eval_keys)
+    assert any("ger_frk" in key or "1667522809_J_0001_0002" in key for key in eval_keys)
     captured = capsys.readouterr().out
-    std_lines = captured.split('\n')
+    std_lines = captured.split("\n")
     assert std_lines[0] == "[DEBUG] text normalized using 'NFC' code points for 'Cs,Ls'"
     # Verify the specific file appears in the output
-    assert any('1667522809_J_0001_0002' in line for line in std_lines)
+    assert any("1667522809_J_0001_0002" in line for line in std_lines)
 
 
 def test_single_candidate_and_reference_file_cli(cli_paths, capsys):
     """Evaluate an explicitly selected candidate/reference page pair."""
 
-    candidate_file = cli_paths['single_candidate_file']
-    reference_file = cli_paths['single_reference_file']
+    candidate_file = cli_paths["single_candidate_file"]
+    reference_file = cli_paths["single_reference_file"]
     assert candidate_file.is_file()
     assert reference_file.is_file()
 
-    results = dig.start_evaluation({
-        "candidates": candidate_file,
-        "reference": reference_file,
-        "metrics": "Cs",
-        "verbosity": 2,
-        "utf8": dig.DEFAULT_UTF8_NORM,
-        "sequential": True,
-    })
+    results = dig.start_evaluation(
+        {
+            "candidates": candidate_file,
+            "reference": reference_file,
+            "metrics": "Cs",
+            "verbosity": 2,
+            "utf8": dig.DEFAULT_UTF8_NORM,
+            "sequential": True,
+        }
+    )
 
     assert len(results) > 0
     captured = capsys.readouterr().out
@@ -216,14 +229,16 @@ def test_reference_file_requires_single_candidate_file(cli_paths):
     """Reject mapping one explicitly supplied reference file to many candidates."""
 
     with pytest.raises(SystemExit) as excinfo:
-        dig.start_evaluation({
-            "candidates": cli_paths['candidate_dir'],
-            "reference": cli_paths['single_reference_file'],
-            "metrics": "Cs",
-            "verbosity": 0,
-            "utf8": dig.DEFAULT_UTF8_NORM,
-            "sequential": True,
-        })
+        dig.start_evaluation(
+            {
+                "candidates": cli_paths["candidate_dir"],
+                "reference": cli_paths["single_reference_file"],
+                "metrics": "Cs",
+                "verbosity": 0,
+                "utf8": dig.DEFAULT_UTF8_NORM,
+                "sequential": True,
+            }
+        )
 
     assert excinfo.value.code == 1
 
@@ -231,18 +246,18 @@ def test_reference_file_requires_single_candidate_file(cli_paths):
 def test_cli_with_mets_mods_aggregation(cli_paths, capsys):
     """Test CLI with METS/MODS aggregation parameters"""
     pytest.importorskip("lxml", reason="lxml required for METS/MODS extraction")
-    
+
     # arrange
     dig.VERBOSITY = 1
-    dst_candidates = cli_paths['candidate_dir']
-    dst_reference = cli_paths['reference_dir']
-    dst_mets = cli_paths['mets_file']
-    
+    dst_candidates = cli_paths["candidate_dir"]
+    dst_reference = cli_paths["reference_dir"]
+    dst_mets = cli_paths["mets_file"]
+
     # assert files exist
     assert _DOMAIN_LABEL == dst_candidates.name
     assert _DOMAIN_LABEL == dst_reference.name
     assert dst_mets.is_file()
-    
+
     # act - use METS/MODS aggregation with language and genre dimensions
     cli_args = {
         "candidates": dst_candidates,
@@ -252,18 +267,18 @@ def test_cli_with_mets_mods_aggregation(cli_paths, capsys):
         "utf8": dig.DEFAULT_UTF8_NORM,
         "sequential": True,
         "mets_file": str(dst_mets),
-        "mods_dimensions": "language,genre"
+        "mods_dimensions": "language,genre",
     }
     eval_results = dig.start_evaluation(cli_args)
-    
+
     # assert
     assert len(eval_results) > 0
-    
+
     # Check that results are aggregated by MODS dimensions
     eval_keys = [result.eval_key for result in eval_results]
     # Should contain keys like "Cs@language:ger" or "Cs@genre:article"
-    assert any('language:' in key for key in eval_keys) or any('genre:' in key for key in eval_keys)
-    
+    assert any("language:" in key for key in eval_keys) or any("genre:" in key for key in eval_keys)
+
     # Check debug output
     captured = capsys.readouterr().out
     # New unified aggregation system uses different debug message format
@@ -272,13 +287,13 @@ def test_cli_with_mets_mods_aggregation(cli_paths, capsys):
 
 def test_cli_with_mets_file_only_warning(cli_paths):
     """Test CLI shows warning when METS file provided without dimensions"""
-    
+
     # arrange
     dig.VERBOSITY = 1
-    dst_candidates = cli_paths['candidate_dir']
-    dst_reference = cli_paths['reference_dir']
-    dst_mets = cli_paths['mets_file']
-    
+    dst_candidates = cli_paths["candidate_dir"]
+    dst_reference = cli_paths["reference_dir"]
+    dst_mets = cli_paths["mets_file"]
+
     # act - provide METS file but no dimensions (should use default aggregation)
     cli_args = {
         "candidates": dst_candidates,
@@ -291,7 +306,7 @@ def test_cli_with_mets_file_only_warning(cli_paths):
         # No mods_dimensions provided
     }
     eval_results = dig.start_evaluation(cli_args)
-    
+
     # assert - should still work with default aggregation
     assert len(eval_results) > 0
 
@@ -300,9 +315,9 @@ def test_cli_with_mets_invalid_mods_dimension_fails_early(cli_paths):
     """Fail fast when --aggregate-by requests unknown mods dimension with METS file."""
 
     dig.VERBOSITY = 1
-    dst_candidates = cli_paths['candidate_dir']
-    dst_reference = cli_paths['reference_dir']
-    dst_mets = cli_paths['mets_file']
+    dst_candidates = cli_paths["candidate_dir"]
+    dst_reference = cli_paths["reference_dir"]
+    dst_mets = cli_paths["mets_file"]
 
     cli_args = {
         "candidates": dst_candidates,
@@ -325,9 +340,9 @@ def test_cli_with_legacy_invalid_mods_dimension_fails_early(cli_paths):
     """Fail fast for invalid legacy --mods-dimensions with METS file."""
 
     dig.VERBOSITY = 1
-    dst_candidates = cli_paths['candidate_dir']
-    dst_reference = cli_paths['reference_dir']
-    dst_mets = cli_paths['mets_file']
+    dst_candidates = cli_paths["candidate_dir"]
+    dst_reference = cli_paths["reference_dir"]
+    dst_mets = cli_paths["mets_file"]
 
     cli_args = {
         "candidates": dst_candidates,
@@ -467,6 +482,42 @@ def test_apply_entry_filter_warns_and_discards_missing_metadata(capsys):
     assert "Discarded 1 entries with missing filter criterion 'metadata_lang'" in captured
 
 
+def test_report_mets_coverage_distinguishes_items_and_references(capsys):
+    """Explain that evaluation items, rather than MODS elements, are counted."""
+    represented = dig.digev.EvalEntry(Path("candidate-a.xml"))
+    represented.path_groundtruth = Path("1667522809_J_0001_0002.art.gt.xml")
+    absent = dig.digev.EvalEntry(Path("candidate-b.xml"))
+    absent.path_groundtruth = Path("not-in-mets.gt.xml")
+
+    dig._report_mets_coverage([represented, absent], TEST_RES_DIR / "test_mets.xml")
+
+    output = capsys.readouterr().out
+    assert "1/2 evaluation items map to 1/2 full-text file references" in output
+    assert "candidate/ground-truth pairs, not MODS elements" in output
+    assert "1 METS full-text references have no evaluation item and are not counted" in output
+
+
+def test_report_aggregation_coverage_reports_missing_values(capsys):
+    """Report entries omitted because an aggregation dimension has no value."""
+    with_value = dig.digev.EvalEntry(Path("with.xml"))
+    with_value.tags["language"] = "ger"
+    without_value = dig.digev.EvalEntry(Path("without.xml"))
+    strategy = dig.digev.AggregationStrategy(
+        [
+            dig.digev.AggregationDimension(
+                "metadata_language",
+                dig.digev.CustomMetadataExtractor("language"),
+            )
+        ]
+    )
+
+    dig._report_aggregation_coverage([with_value, without_value], strategy)
+
+    assert capsys.readouterr().out == (
+        "[INFO ] Aggregation dimension 'metadata_language': " "1/2 evaluation items have a value; 1 omitted\n"
+    )
+
+
 def test_cli_filter_by_and_aggregate_by_with_mets(cli_paths):
     """CLI supports single pre-filter by MODS metadata followed by aggregation."""
     pytest.importorskip("lxml", reason="lxml required for METS/MODS extraction")
@@ -516,7 +567,7 @@ def test_cli_filter_by_multilanguage_set_containment_end_to_end(tmp_path):
     # Entry B has only one language (ger) and 20th century publication.
     mets_file = tmp_path / "reference" / "test_mets_multilang.xml"
     mets_file.write_text(
-    f"""<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+        f"""<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <mets:mets xmlns:mets=\"http://www.loc.gov/METS/\"
                      xmlns:mods=\"http://www.loc.gov/mods/v3\"
                      xmlns:xlink=\"http://www.w3.org/1999/xlink\">
@@ -562,4 +613,3 @@ def test_cli_filter_by_multilanguage_set_containment_end_to_end(tmp_path):
     keys = [r.eval_key for r in results]
     assert all("mods_dateIssued_century:19th" in key for key in keys)
     assert all("20th" not in key for key in keys)
-

@@ -25,9 +25,7 @@ def get_page_dimensions(file_path) -> typing.Optional[typing.Tuple[int, int]]:
         return None
 
     width = page_element.attrib.get("WIDTH", page_element.attrib.get("imageWidth"))
-    height = page_element.attrib.get(
-        "HEIGHT", page_element.attrib.get("imageHeight")
-    )
+    height = page_element.attrib.get("HEIGHT", page_element.attrib.get("imageHeight"))
     if width is None or height is None:
         return None
     return int(width), int(height)
@@ -60,9 +58,7 @@ def get_bounding_box(file_path) -> typing.Optional[typing.Tuple]:
         if "alto" in start_token:
             # legacy: read from custom ALTO meta data
             root_element = ET.parse(file_path).getroot()
-            element = root_element.find(
-                './/alto:Tags/alto:OtherTag[@ID="ulb_groundtruth_points"]', _XML_NS
-            )
+            element = root_element.find('.//alto:Tags/alto:OtherTag[@ID="ulb_groundtruth_points"]', _XML_NS)
             if element is not None:
                 points = element.attrib["VALUE"].split(" ")
                 _p1 = points[0].split(",")
@@ -74,10 +70,7 @@ def get_bounding_box(file_path) -> typing.Optional[typing.Tuple]:
             # read from given alto coordinates
             raw_elements = root_element.findall(".//alto:String", _XML_NS)
             non_empty = [
-                s
-                for s in raw_elements
-                if s.attrib["CONTENT"].strip()
-                and re.match(r"[^\d]", s.attrib["CONTENT"])
+                s for s in raw_elements if s.attrib["CONTENT"].strip() and re.match(r"[^\d]", s.attrib["CONTENT"])
             ]
             return _calculate_bounding_box(non_empty, _map_alto)
 
@@ -88,9 +81,7 @@ def get_bounding_box(file_path) -> typing.Optional[typing.Tuple]:
             name_space = doc_root.namespaceURI
             root_element = ET.parse(file_path).getroot()
             # step one: read PAGE border coords
-            _xpr_page_borders = (
-                f"{{{name_space}}}Page/{{{name_space}}}Border/{{{name_space}}}Coords"
-            )
+            _xpr_page_borders = f"{{{name_space}}}Page/{{{name_space}}}Border/{{{name_space}}}Coords"
             _page_coords = root_element.findall(_xpr_page_borders)
             if len(_page_coords) > 0:
                 _frame_points = _calculate_bounding_box(_page_coords, _map_page2013)

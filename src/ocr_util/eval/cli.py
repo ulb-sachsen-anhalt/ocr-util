@@ -6,6 +6,8 @@ import re
 import sys
 import typing
 
+import lxml.etree as ET
+
 from pathlib import Path
 
 import ocr_util.eval as digev
@@ -116,10 +118,7 @@ def _build_filter_spec(
         return None
 
     if "=" not in filter_by:
-        msg = (
-            "Invalid --filter-by format. Expected '<extractor_spec>=<value>', "
-            f"got '{filter_by}'"
-        )
+        msg = "Invalid --filter-by format. Expected '<extractor_spec>=<value>', " f"got '{filter_by}'"
         if strict:
             raise ValueError(msg)
         print(f"[WARN ] {msg}")
@@ -130,10 +129,7 @@ def _build_filter_spec(
     expected_value = expected_value.strip()
 
     if not extractor_spec or not expected_value:
-        msg = (
-            "Invalid --filter-by format. Both extractor and value are required, "
-            f"got '{filter_by}'"
-        )
+        msg = "Invalid --filter-by format. Both extractor and value are required, " f"got '{filter_by}'"
         if strict:
             raise ValueError(msg)
         print(f"[WARN ] {msg}")
@@ -179,9 +175,7 @@ def _apply_entry_filter(
             n_filtered_out += 1
 
     if missing_value_entries:
-        print(
-            f"[WARN ] Discarded {len(missing_value_entries)} entries with missing filter criterion '{dim_name}'"
-        )
+        print(f"[WARN ] Discarded {len(missing_value_entries)} entries with missing filter criterion '{dim_name}'")
         if verbosity >= 2:
             for miss in missing_value_entries[:5]:
                 print(f"[WARN ] missing '{dim_name}' for '{miss.path_candidate}'")
@@ -193,6 +187,64 @@ def _apply_entry_filter(
         )
 
     return kept
+
+
+def _report_mets_coverage(
+    entries: typing.Sequence[digev.EvalEntry],
+    mets_path: Path,
+    verbosity: int = 0,
+) -> None:
+    """report how evaluation entries relate to METS full-text references."""
+    tree = ET.parse(str(mets_path))
+    namespaces = digev.METSModsExtractor.DEFAULT_NAMESPACES
+    hrefs: list[str] = []
+    for file_group in tree.xpath("//mets:fileGrp", namespaces=namespaces):
+        if "FULLTEXT" not in (file_group.get("USE") or "").upper():
+            continue
+        hrefs.extend(
+            str(href) for href in file_group.xpath("./mets:file/mets:FLocat/@xlink:href", namespaces=namespaces)
+        )
+
+    def entry_matches_href(entry: digev.EvalEntry, href: str) -> bool:
+        gt_path = entry.path_groundtruth
+        return bool(gt_path and (gt_path.name in href or href in str(gt_path)))
+
+    mapped_entries = [entry for entry in entries if any(entry_matches_href(entry, href) for href in hrefs)]
+    represented_hrefs = [href for href in hrefs if any(entry_matches_href(entry, href) for entry in entries)]
+
+    print(
+        f"[INFO ] METS coverage: {len(mapped_entries)}/{len(entries)} evaluation items map to "
+        f"{len(represented_hrefs)}/{len(hrefs)} full-text file references. "
+        "Item counts represent evaluated candidate/ground-truth pairs, not MODS elements."
+    )
+
+    missing_entries = [entry for entry in entries if entry not in mapped_entries]
+    unused_hrefs = [href for href in hrefs if href not in represented_hrefs]
+    if missing_entries:
+        print(f"[WARN ] {len(missing_entries)} evaluation items are not represented by a METS full-text reference")
+    if unused_hrefs:
+        print(f"[WARN ] {len(unused_hrefs)} METS full-text references have no evaluation item and are not counted")
+    if verbosity >= 2:
+        for entry in missing_entries:
+            print(f"[WARN ] evaluation item not in METS: {entry.path_groundtruth}")
+        for href in unused_hrefs:
+            print(f"[WARN ] METS reference not evaluated: {href}")
+
+
+def _report_aggregation_coverage(
+    entries: typing.Sequence[digev.EvalEntry],
+    strategy: digev.AggregationStrategy,
+) -> None:
+    """report how many evaluation items provide each aggregation value."""
+    for dimension in strategy.dimensions:
+        with_value = sum(
+            1 for entry in entries if (value := dimension.extractor(entry)) is not None and str(value).strip()
+        )
+        omitted = len(entries) - with_value
+        print(
+            f"[INFO ] Aggregation dimension '{dimension.name}': {with_value}/{len(entries)} "
+            f"evaluation items have a value; {omitted} omitted"
+        )
 
 
 def _parse_extractor_spec(
@@ -288,9 +340,7 @@ def _parse_extractor_spec(
         # e.g. mods:dateIssued:decade
         dim_and_transform = parts[1].strip().split(":", 1)
         dimension = dim_and_transform[0].strip()
-        transform_name = (
-            dim_and_transform[1].strip() if len(dim_and_transform) > 1 else None
-        )
+        transform_name = dim_and_transform[1].strip() if len(dim_and_transform) > 1 else None
 
         # Validate optional transform
         transform_fn = None
@@ -305,29 +355,17 @@ def _parse_extractor_spec(
         # Check if it's a predefined dimension or custom XPath
         if dimension in MODS_DIMENSION_XPATHS:
             xpath = MODS_DIMENSION_XPATHS[dimension]
-            dim_name = (
-                f"mods_{dimension}"
-                if transform_name is None
-                else f"mods_{dimension}_{transform_name}"
-            )
+            dim_name = f"mods_{dimension}" if transform_name is None else f"mods_{dimension}_{transform_name}"
         elif dimension.startswith(".//"):  # Custom XPath
             xpath = dimension
-            dim_name = (
-                "mods_custom"
-                if transform_name is None
-                else f"mods_custom_{transform_name}"
-            )
+            dim_name = "mods_custom" if transform_name is None else f"mods_custom_{transform_name}"
         else:
-            print(
-                f"[WARN ] Unknown MODS dimension '{dimension}'. Available: {', '.join(MODS_DIMENSION_XPATHS.keys())}"
-            )
+            print(f"[WARN ] Unknown MODS dimension '{dimension}'. Available: {', '.join(MODS_DIMENSION_XPATHS.keys())}")
             print("[WARN ] Or provide a custom XPath expression starting with './/'")
             return None
 
         try:
-            base_extractor = digev.METSModsExtractor(
-                mets_file_path=mets_path, xpath_expression=xpath
-            )
+            base_extractor = digev.METSModsExtractor(mets_file_path=mets_path, xpath_expression=xpath)
             extractor = (
                 digev.ValueTransformExtractor(base_extractor, transform_fn)
                 if transform_fn is not None
@@ -345,9 +383,7 @@ def _parse_extractor_spec(
             return None
 
         if len(parts) < 2:
-            print(
-                "[ERROR] mets: extractor requires attribute name: 'mets:type' or 'mets:label'"
-            )
+            print("[ERROR] mets: extractor requires attribute name: 'mets:type' or 'mets:label'")
             return None
 
         attr_spec = parts[1].strip().upper()  # e.g. "type" → "TYPE"
@@ -425,16 +461,12 @@ def _build_aggregation_strategy(
             dim_name, extractor = result
             dimensions.append(digev.AggregationDimension(dim_name, extractor))
             if verbosity >= 1:
-                print(
-                    f"[DEBUG] Added aggregation dimension '{dim_name}' from spec '{spec}'"
-                )
+                print(f"[DEBUG] Added aggregation dimension '{dim_name}' from spec '{spec}'")
         else:
             invalid_specs.append(spec)
 
     if strict and invalid_specs:
-        raise ValueError(
-            f"Invalid aggregation dimension specification(s): {', '.join(invalid_specs)}"
-        )
+        raise ValueError(f"Invalid aggregation dimension specification(s): {', '.join(invalid_specs)}")
 
     if not dimensions:
         return None
@@ -480,11 +512,7 @@ def start_evaluation(parse_args: typing.Dict):
         digem.MetricDictionary.LANGUAGE = parse_args["language"]
     uses_lang_tool: bool = "DictLT" in metrics or "DictionaryLangTool" in metrics
     if uses_lang_tool:
-        lt_url: str = (
-            parse_args["lt_api_url"]
-            if "lp_api_url" in parse_args
-            else LanguageTool.DEFAULT_URL
-        )
+        lt_url: str = parse_args["lt_api_url"] if "lp_api_url" in parse_args else LanguageTool.DEFAULT_URL
         LanguageTool.initialize(lt_url)
 
     # go on with basic validation
@@ -498,26 +526,14 @@ def start_evaluation(parse_args: typing.Dict):
             print(f'[ERROR] reference "{path_reference}": invalid! exit!')
             sys.exit(1)
         if path_reference.is_file() and path_candidates.is_dir():
-            print(
-                "[ERROR] a reference file requires a single candidate file! exit!"
-            )
+            print("[ERROR] a reference file requires a single candidate file! exit!")
             sys.exit(1)
 
     if path_candidates and path_reference:
-        base_can = (
-            path_candidates.name
-            if path_candidates.is_dir()
-            else path_candidates.parent.name
-        )
-        base_ref = (
-            path_reference.name
-            if path_reference.is_dir()
-            else path_reference.parent.name
-        )
+        base_can = path_candidates.name if path_candidates.is_dir() else path_candidates.parent.name
+        base_ref = path_reference.name if path_reference.is_dir() else path_reference.parent.name
         if base_can != base_ref:
-            print(
-                f"[WARN ] base '{base_can}' and '{base_ref}' mismatch, aggregation might be inaccurate!"
-            )
+            print(f"[WARN ] base '{base_can}' and '{base_ref}' mismatch, aggregation might be inaccurate!")
 
     # some diagnostics
     if verbosity >= 2:
@@ -554,9 +570,7 @@ def start_evaluation(parse_args: typing.Dict):
             print(f"[ERROR] {err}. exit!")
             sys.exit(1)
         if not strategy:
-            print(
-                "[WARN ] No valid aggregation dimensions provided. Using default aggregation."
-            )
+            print("[WARN ] No valid aggregation dimensions provided. Using default aggregation.")
     elif mods_dimensions:
         if not mets_path:
             print("[ERROR] --mods-dimensions requires --mets-file! exit!")
@@ -565,9 +579,7 @@ def start_evaluation(parse_args: typing.Dict):
         unified_specs = [f"mods:{dim}" for dim in dimension_names]
         aggregate_by_converted = ",".join(unified_specs)
         if verbosity >= 1:
-            print(
-                f"[DEBUG] Converting legacy --mods-dimensions to unified format: {aggregate_by_converted}"
-            )
+            print(f"[DEBUG] Converting legacy --mods-dimensions to unified format: {aggregate_by_converted}")
         try:
             strategy = _build_aggregation_strategy(
                 aggregate_by_converted,
@@ -579,9 +591,7 @@ def start_evaluation(parse_args: typing.Dict):
             print(f"[ERROR] {err}. exit!")
             sys.exit(1)
         if not strategy:
-            print(
-                "[WARN ] No valid MODS dimensions provided. Using default aggregation."
-            )
+            print("[WARN ] No valid MODS dimensions provided. Using default aggregation.")
 
     # Build and validate single-entry filter; always strict so invalid specs
     # abort before evaluation starts.
@@ -599,9 +609,7 @@ def start_evaluation(parse_args: typing.Dict):
 
     # create basic evaluator instance
     # If a single file is passed, use its parent directory as the root
-    evaluator_root = (
-        path_candidates if path_candidates.is_dir() else path_candidates.parent
-    )
+    evaluator_root = path_candidates if path_candidates.is_dir() else path_candidates.parent
     evaluator = digev.Evaluator(
         evaluator_root,
         verbosity=verbosity,
@@ -620,9 +628,7 @@ def start_evaluation(parse_args: typing.Dict):
     # gather structure information
     candidates: typing.List[digev.EvalEntry] = digev.gather_candidates(path_candidates)
     if len(candidates) == 0:
-        print(
-            f"[WARN ] no ocr data (.*xml) in dir starting from '{path_candidates}'! exit."
-        )
+        print(f"[WARN ] no ocr data (.*xml) in dir starting from '{path_candidates}'! exit.")
         sys.exit(0)
 
     # match groundtruth
@@ -644,24 +650,21 @@ def start_evaluation(parse_args: typing.Dict):
     gt_missing = set(gt_entries) ^ set(candidates)
     rnd_str = f" ({gt_missing})" if gt_missing else ""
     if verbosity >= 1:
-        print(
-            f'[DEBUG] from "{n_entries}" filtered "{n_diff}" candidates missing groundtruth{rnd_str}'
-        )
+        print(f'[DEBUG] from "{n_entries}" filtered "{n_diff}" candidates missing groundtruth{rnd_str}')
+
+    if mets_path:
+        _report_mets_coverage(gt_entries, mets_path, verbosity=verbosity)
 
     # Optional metadata/value filter stage before expensive metric evaluation.
     if filter_spec:
         n_before_filter = len(gt_entries)
         filter_dim_name, _, filter_value = filter_spec
         if verbosity >= 1:
-            print(
-                f"[DEBUG] Applying filter: {filter_dim_name}={filter_value} on {n_before_filter} entries"
-            )
+            print(f"[DEBUG] Applying filter: {filter_dim_name}={filter_value} on {n_before_filter} entries")
         gt_entries = _apply_entry_filter(gt_entries, filter_spec, verbosity=verbosity)
         n_after_filter = len(gt_entries)
         n_filtered_out = n_before_filter - n_after_filter
-        pct_filtered = (
-            100.0 * n_filtered_out / n_before_filter if n_before_filter > 0 else 0
-        )
+        pct_filtered = 100.0 * n_filtered_out / n_before_filter if n_before_filter > 0 else 0
         print(
             f"[INFO ] Filter '{filter_dim_name}={filter_value}' result: {n_after_filter}/{n_before_filter} entries "
             f"({pct_filtered:.1f}% filtered out)"
@@ -675,6 +678,7 @@ def start_evaluation(parse_args: typing.Dict):
 
     # Apply aggregation strategy
     if strategy:
+        _report_aggregation_coverage(gt_entries, strategy)
         if verbosity >= 1:
             dim_names = [dim.name for dim in strategy.dimensions]
             hierarchical_str = "(hierarchical)" if strategy.hierarchical else "(flat)"
@@ -683,18 +687,14 @@ def start_evaluation(parse_args: typing.Dict):
             )
         evaluator.aggregate_generic(strategy)
         if verbosity >= 1:
-            print(
-                f"[DEBUG] Aggregation complete: {len(evaluator.evaluation_map)} aggregation keys generated"
-            )
+            print(f"[DEBUG] Aggregation complete: {len(evaluator.evaluation_map)} aggregation keys generated")
     else:
         # Use default aggregation (backward compatible)
         if verbosity >= 1:
             print("[DEBUG] Using default aggregation strategy (directory hierarchy + type)")
         evaluator.aggregate(by_type=True)
         if verbosity >= 1:
-            print(
-                f"[DEBUG] Aggregation complete: {len(evaluator.evaluation_map)} aggregation keys generated"
-            )
+            print(f"[DEBUG] Aggregation complete: {len(evaluator.evaluation_map)} aggregation keys generated")
 
     # evaluator.evaluate()
     evaluator.eval_map()

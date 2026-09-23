@@ -90,9 +90,7 @@ def _write_source_mets(
     file_path.write_text(xml, encoding="utf-8")
 
 
-def _build_resource(
-    out_dir: Path, mets_file: Path, gt_file: Path, page_urn: str
-) -> cc.CorpusPageInput:
+def _build_resource(out_dir: Path, mets_file: Path, gt_file: Path, page_urn: str) -> cc.CorpusPageInput:
     gt = cc.GroundtruthFile(
         identifier=page_urn,
         file_base_name=gt_file.stem,
@@ -114,6 +112,7 @@ def _build_corpus_args(out_dir: Path, corpus_label: str = "Ground Truth Corpus")
         corpus_label=corpus_label,
     )
 
+
 # def _patch_template_parse_with_struct_link():
 #     original_parse = gc.ET.parse
 
@@ -128,9 +127,7 @@ def _build_corpus_args(out_dir: Path, corpus_label: str = "Ground Truth Corpus")
 #     return parse_with_struct_link
 
 
-def test_mwe_corpus_file(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_mwe_corpus_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify successful METS generation, order normalization, and DMD deduplication
     for a corpus with two pages sharing common MODS metadata."""
     out_dir = tmp_path / "out"
@@ -174,8 +171,8 @@ def test_mwe_corpus_file(
     monkeypatch.setattr(gc, "cc", cc, raising=False)
 
     cfile = gc.Corpus(
-      cargs=_build_corpus_args(out_dir, corpus_label="Test Corpus"),
-      inputs=resources,
+        cargs=_build_corpus_args(out_dir, corpus_label="Test Corpus"),
+        inputs=resources,
     )
     result = cfile.build()
 
@@ -188,21 +185,15 @@ def test_mwe_corpus_file(
     assert log_root is not None
     assert log_root.get("LABEL") == "Test Corpus"
 
-    dmd_sections = document.findall(f'.//{METS_NS}dmdSec')
+    dmd_sections = document.findall(f".//{METS_NS}dmdSec")
     assert len(dmd_sections) == 1, "Expected exactly one dmdSec element"
-    assert dmd_sections[0].get('ID', "").startswith("DMDLOG_0001")
+    assert dmd_sections[0].get("ID", "").startswith("DMDLOG_0001")
 
     phys_orders = [
-        e.get("ORDER")
-        for e in document.findall(
-            f'.//{METS_NS}structMap[@TYPE="PHYSICAL"]//{METS_NS}div[@ORDER]'
-        )
+        e.get("ORDER") for e in document.findall(f'.//{METS_NS}structMap[@TYPE="PHYSICAL"]//{METS_NS}div[@ORDER]')
     ]
     log_orders = [
-        e.get("ORDER")
-        for e in document.findall(
-            f'.//{METS_NS}structMap[@TYPE="LOGICAL"]//{METS_NS}div[@ORDER]'
-        )
+        e.get("ORDER") for e in document.findall(f'.//{METS_NS}structMap[@TYPE="LOGICAL"]//{METS_NS}div[@ORDER]')
     ]
     assert phys_orders == ["1", "2"]
     assert log_orders == ["1", "2"]
@@ -215,9 +206,7 @@ def test_mwe_corpus_file(
     assert len(sm_links) == 2
 
 
-def _write_source_mets_multivolume(
-    file_path: Path, *, page_urn: str, phys_id: str, log_id: str, dmd_id: str
-) -> None:
+def _write_source_mets_multivolume(file_path: Path, *, page_urn: str, phys_id: str, log_id: str, dmd_id: str) -> None:
     """Write a source METS with host-level metadata but no publication originInfo."""
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <mets:mets xmlns:mets="http://www.loc.gov/METS/"
@@ -279,9 +268,7 @@ def _write_source_mets_multivolume(
     file_path.write_text(xml, encoding="utf-8")
 
 
-def test_corpus_with_multivolumes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
+def test_corpus_with_multivolumes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """Verify no identifiers from related_host present."""
     out_dir = tmp_path / "out"
     out_dir.mkdir()
@@ -301,10 +288,10 @@ def test_corpus_with_multivolumes(
     monkeypatch.setattr(gc, "cc", cc, raising=False)
 
     generator = gc.Corpus(
-      cargs=_build_corpus_args(out_dir),
-      inputs=resources,
+        cargs=_build_corpus_args(out_dir),
+        inputs=resources,
     )
-    
+
     # act
     result = generator.build()
 
@@ -312,6 +299,6 @@ def test_corpus_with_multivolumes(
     assert result.file_path.exists()
     assert result.file_path.name == "mets.xml"
     doc_root = ET.parse(result.file_path).getroot()
-    dmd_identifiers = doc_root.xpath('//mods:identifier/text()', namespaces={'mods': 'http://www.loc.gov/mods/v3'})
+    dmd_identifiers = doc_root.xpath("//mods:identifier/text()", namespaces={"mods": "http://www.loc.gov/mods/v3"})
     assert dmd_identifiers is not None
-    assert ['9072299X', '190330430', 'urn:nbn:de:gbv:3:1-831022'] == dmd_identifiers
+    assert ["9072299X", "190330430", "urn:nbn:de:gbv:3:1-831022"] == dmd_identifiers

@@ -51,22 +51,16 @@ class FormatPageUtil:
 
         # sort regions by reading order if available, otherwise use DOM order
         if reading_order_map:
-            regions = FormatPageUtil.__sort_regions_by_reading_order(
-                regions, reading_order_map
-            )
+            regions = FormatPageUtil.__sort_regions_by_reading_order(regions, reading_order_map)
 
         # inspect *all* regions
         region_pieces: List[DigitalObjectTree] = []
         for region in regions:
-            this_piece: DigitalObjectTree = FormatPageUtil.__from_text_element(
-                region, top_piece, ns
-            )
+            this_piece: DigitalObjectTree = FormatPageUtil.__from_text_element(region, top_piece, ns)
             # go into details
             page_lines = region.getElementsByTagNameNS(ns, "TextLine")
             if len(page_lines) > 0:
-                this_piece.children = FormatPageUtil.__read_lines(
-                    page_lines, this_piece, ns
-                )
+                this_piece.children = FormatPageUtil.__read_lines(page_lines, this_piece, ns)
             this_piece.parent = top_piece
             region_pieces.append(this_piece)
         top_piece.children = region_pieces
@@ -75,9 +69,7 @@ class FormatPageUtil:
         return top_piece
 
     @staticmethod
-    def __read_lines(
-        page_lines: List[Element], parent: DigitalObjectTree, ns
-    ) -> List[DigitalObjectTree]:
+    def __read_lines(page_lines: List[Element], parent: DigitalObjectTree, ns) -> List[DigitalObjectTree]:
         line_pieces = []
         for page_line in page_lines:
             line_piece = FormatPageUtil.__from_text_element(page_line, parent, ns)
@@ -91,10 +83,7 @@ class FormatPageUtil:
                 # inspect PAGE on word level, if set
                 if len(word_tokens) > 0:
                     try:
-                        word_pieces = [
-                            FormatPageUtil.__from_text_element(el, line_piece, ns)
-                            for el in word_tokens
-                        ]
+                        word_pieces = [FormatPageUtil.__from_text_element(el, line_piece, ns) for el in word_tokens]
                         if not word_pieces:
                             raise RuntimeError(f"No words in line {line_piece.id}!")
                         # remove line content in favour of words content
@@ -128,38 +117,27 @@ class FormatPageUtil:
         """
         element_id = element.getAttribute("id")
         the_level, _local = FormatPageUtil.__map_piece_type(element)
-        piece = DigitalObjectTree(
-            element_id, element, file_format=dc.DigitalObjectTreeOCRFileFormat.PAGE
-        )
+        piece = DigitalObjectTree(element_id, element, file_format=dc.DigitalObjectTreeOCRFileFormat.PAGE)
         piece.level = the_level
         piece.parent = parent
 
         # inspect geometry
         coords = [n for n in element.childNodes if n.localName == "Coords"]
         if len(coords) < 1 or "points" not in coords[0].attributes:
-            raise dc.DigitalObjectGeometryException(
-                f"{_local}@ID={element_id} invalid coordinate data"
-            )
+            raise dc.DigitalObjectGeometryException(f"{_local}@ID={element_id} invalid coordinate data")
         first_coord_points = coords[0].getAttribute("points").split()
         # invariant: require at least 3 points, otherwise invalid polygon area
         if len(first_coord_points) < 3:
-            raise dc.DigitalObjectGeometryException(
-                f"{_local}@ID={element_id} too few points {first_coord_points}"
-            )
+            raise dc.DigitalObjectGeometryException(f"{_local}@ID={element_id} too few points {first_coord_points}")
         try:
-            piece.dimensions = [
-                [int(_point.split(",")[0]), int(_point.split(",")[1])]
-                for _point in first_coord_points
-            ]
+            piece.dimensions = [[int(_point.split(",")[0]), int(_point.split(",")[1])] for _point in first_coord_points]
         except ValueError as _val_err:
             raise dc.DigitalObjectGeometryException(
                 f"{_local}@ID={element_id} invalid {first_coord_points}"
             ) from _val_err
         # replace current text with next order children text
         txt_eqs = [
-            n
-            for n in element.childNodes
-            if n.localName == "TextEquiv" and FormatPageUtil.__contains_value(n, ns)
+            n for n in element.childNodes if n.localName == "TextEquiv" and FormatPageUtil.__contains_value(n, ns)
         ]
         if txt_eqs:
             if len(txt_eqs) == 1:
@@ -171,15 +149,13 @@ class FormatPageUtil:
                     piece.max_level = dc.DigitalObjectLevel.LINE
             unicodes = first_equiv.getElementsByTagNameNS(ns, "Unicode")
             if len(unicodes) < 1:
-                raise dc.DigitalObjectException(
-                    f"{_local}@ID={element_id} text missing unicode"
-                )
+                raise dc.DigitalObjectException(f"{_local}@ID={element_id} text missing unicode")
             the_unicode = unicodes[0]
             if the_unicode.firstChild and the_unicode.firstChild.nodeValue is not None:
                 # replace linebreak if text only at region level
                 txt_content = the_unicode.firstChild.nodeValue.replace("\n", " ")
                 if txt_content:
-                    piece.transcription = txt_content.strip() # no final space
+                    piece.transcription = txt_content.strip()  # no final space
                     # overthrow existing parent transcription
                     if piece.parent is not None and piece.parent.transcriptions:
                         piece.parent.transcriptions = []
@@ -225,9 +201,7 @@ class FormatPageUtil:
         reading_order_map = {}
         reading_orders = page_element.getElementsByTagNameNS(ns, "ReadingOrder")
         if len(reading_orders) > 0:
-            region_refs = reading_orders[0].getElementsByTagNameNS(
-                ns, "RegionRefIndexed"
-            )
+            region_refs = reading_orders[0].getElementsByTagNameNS(ns, "RegionRefIndexed")
             for ref in region_refs:
                 region_id = ref.getAttribute("regionRef")
                 index = ref.getAttribute("index")
@@ -240,9 +214,7 @@ class FormatPageUtil:
         return reading_order_map
 
     @staticmethod
-    def __sort_regions_by_reading_order(
-        regions: List[Element], reading_order_map: Dict[str, int]
-    ) -> List[Element]:
+    def __sort_regions_by_reading_order(regions: List[Element], reading_order_map: Dict[str, int]) -> List[Element]:
         """Sort regions according to reading order
 
         Regions with reading order indices are sorted first by their index.

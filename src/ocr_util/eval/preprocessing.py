@@ -92,17 +92,7 @@ DIGITS = (
 )
 # persian indic digits
 DIGITS = (
-    DIGITS
-    + "\u06f0"
-    + "\u06f1"
-    + "\u06f2"
-    + "\u06f3"
-    + "\u06f4"
-    + "\u06f5"
-    + "\u06f6"
-    + "\u06f7"
-    + "\u06f8"
-    + "\u06f9"
+    DIGITS + "\u06f0" + "\u06f1" + "\u06f2" + "\u06f3" + "\u06f4" + "\u06f5" + "\u06f6" + "\u06f7" + "\u06f8" + "\u06f9"
 )
 
 WHITESPACE_TRNSL = str.maketrans("", "", WHITESPACES)
@@ -210,7 +200,7 @@ class TextPreprocessor(Preprocessor):
 
     def normalize_whitespace(self):
         """normalize line breaks and control characters to spaces.
-        
+
         replaces newlines, carriage returns, and other line break
         sequences with single spaces. This ensures consistent handling
         of multi-line text data from different sources (ALTO, PAGE, etc).
@@ -218,19 +208,17 @@ class TextPreprocessor(Preprocessor):
         if isinstance(self._input, str):
             before = self._input
             # Replace various line break sequences with spaces
-            self._input = self._input.replace('\r\n', ' ')  # Windows line breaks
-            self._input = self._input.replace('\r', ' ')    # Old Mac line breaks
-            self._input = self._input.replace('\n', ' ')    # Unix line breaks
-            self._input = self._input.replace('\v', ' ')    # Vertical tab
-            self._input = self._input.replace('\f', ' ')    # Form feed
+            self._input = self._input.replace("\r\n", " ")  # Windows line breaks
+            self._input = self._input.replace("\r", " ")  # Old Mac line breaks
+            self._input = self._input.replace("\n", " ")  # Unix line breaks
+            self._input = self._input.replace("\v", " ")  # Vertical tab
+            self._input = self._input.replace("\f", " ")  # Form feed
             self._record_step("normalize line breaks", before, self._input)
 
     def run(self):
         if isinstance(self._input, Path):
             self.spatial_report = {}
-            self._input, _ = file_to_text(
-                self._input, self.frame, self.one_liner, self.spatial_report
-            )
+            self._input, _ = file_to_text(self._input, self.frame, self.one_liner, self.spatial_report)
         self._set_input_basis()
         self.normalize_whitespace()
         self.normalize_encoding()
@@ -246,9 +234,7 @@ class LetterPreprocessor(TextPreprocessor):
         before = self._input
         removed = {
             "whitespace": sum(char in WHITESPACES for char in before),
-            "punctuation": sum(
-                char in PUNCTUATIONS and char not in WHITESPACES for char in before
-            ),
+            "punctuation": sum(char in PUNCTUATIONS and char not in WHITESPACES for char in before),
             "digits": sum(char in DIGITS for char in before),
         }
         self._input = self._input.translate(WHITESPACE_TRNSL)
@@ -267,9 +253,7 @@ class SimpleTokenizer(TextPreprocessor):
     def tokenize(self):
         """make string list"""
         before = self._input
-        self._input = (
-            self._input.split() if isinstance(self._input, str) else self._input
-        )
+        self._input = self._input.split() if isinstance(self._input, str) else self._input
         self._record_step("tokenize", before, self._input)
 
     def run(self):
@@ -296,19 +280,13 @@ class LanguageAwareTokenizer(SimpleTokenizer):
     def strip_stopwords(self):
         """remove some tokens"""
         before = self._input
-        self._input = self._input - LanguageAwareTokenizer._get_stopwords(
-            languages=self.languages
-        )
-        self._record_step(
-            "remove stopwords", before, self._input, {"languages": self.languages}
-        )
+        self._input = self._input - LanguageAwareTokenizer._get_stopwords(languages=self.languages)
+        self._record_step("remove stopwords", before, self._input, {"languages": self.languages})
 
     def run(self):
         if isinstance(self._input, Path):
             self.spatial_report = {}
-            self._input, _ = file_to_text(
-                self._input, self.frame, self.one_liner, self.spatial_report
-            )
+            self._input, _ = file_to_text(self._input, self.frame, self.one_liner, self.spatial_report)
         self._set_input_basis()
         self.normalize_encoding()
         self.tokenize_to_sorted_set()
@@ -329,11 +307,7 @@ class LanguageAwareTokenizer(SimpleTokenizer):
             nltk.download("stopwords")
         if languages is None:
             languages = STOPWORDS_DEFAULT
-        _stopwords = {
-            _all_words
-            for _lang in languages
-            for _all_words in nltk_corp.stopwords.words(_lang)
-        }
+        _stopwords = {_all_words for _lang in languages for _all_words in nltk_corp.stopwords.words(_lang)}
         return _stopwords
 
 
@@ -377,9 +351,7 @@ class DictionaryTextPreprocessor(TextPreprocessor):
             _out.append(_c)
 
         # strip all combining e's anyway
-        self._input = "".join(_out).replace(
-            DictionaryTextPreprocessor._COMBINING_SMALL_E, ""
-        )
+        self._input = "".join(_out).replace(DictionaryTextPreprocessor._COMBINING_SMALL_E, "")
 
     def run(self):
         self.normalize_encoding()
@@ -392,12 +364,8 @@ def file_to_dict_text(file_path: str, frame=None, oneliner=False) -> typing.Tupl
 
     line_texts: typing.List[str]
     len_lines: int
-    line_texts, len_lines = file_to_text(
-        file_path=file_path, frame=frame, oneliner=False
-    )
-    non_empty_lines: typing.List[str] = [
-        line_text for line_text in line_texts if len(line_text) > 0
-    ]
+    line_texts, len_lines = file_to_text(file_path=file_path, frame=frame, oneliner=False)
+    non_empty_lines: typing.List[str] = [line_text for line_text in line_texts if len(line_text) > 0]
     lines_sanitized_wraps: typing.List[str] = _sanitize_wraps(non_empty_lines)
     lines_sanitized_chars: typing.List[str] = _sanitize_chars(lines_sanitized_wraps)
     text = " ".join(lines_sanitized_chars) if oneliner else lines_sanitized_chars
@@ -427,9 +395,7 @@ def file_to_text(file_path, frame=None, oneliner=True, spatial_report=None) -> t
         if spatial_report is not None:
             spatial_report.update(
                 {
-                    eval_constants.SPATIAL_MODE: "full page"
-                    if requested_frame is None
-                    else "frame filtering",
+                    eval_constants.SPATIAL_MODE: "full page" if requested_frame is None else "frame filtering",
                     eval_constants.SPATIAL_REQUESTED_FRAME: requested_frame,
                     eval_constants.SPATIAL_CANDIDATE_PAGE_FRAME: candidate_page_frame,
                     eval_constants.SPATIAL_TOTAL_TOKEN: total_words,
@@ -478,8 +444,7 @@ def filter_pieces(frame, current) -> typing.Tuple[typing.List, int]:
 
 
 def _uplete(curr: mdom.DigitalObjectTree):
-    if len(curr.children) == 0 and curr.level < mdom.DigitalObjectLevel.PAGE \
-        and curr.parent is not None:
+    if len(curr.children) == 0 and curr.level < mdom.DigitalObjectLevel.PAGE and curr.parent is not None:
         _pa: mdom.DigitalObjectTree = curr.parent
         _pa.remove_children(curr)
         _uplete(_pa)

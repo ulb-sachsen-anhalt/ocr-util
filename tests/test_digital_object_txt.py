@@ -12,11 +12,10 @@ import ocr_util.eval.model.common as mc
 from .conftest import TEST_RES_DIR
 
 
-
 def test_textual_input():
     """Behavior of text input as digital object"""
 
-    gt_path = os.path.join(TEST_RES_DIR, 'groundtruth/txt/1246734.gt.txt')
+    gt_path = os.path.join(TEST_RES_DIR, "groundtruth/txt/1246734.gt.txt")
 
     # act
     with pytest.raises(mc.DigitalObjectException) as exc_info:

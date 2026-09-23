@@ -15,14 +15,14 @@ import ocr_util.eval.geometry as digeo
 from .conftest import TEST_RES_DIR
 
 # default reference
-THE_COMBINED_A_FOX = 'the á lazy brown fox jumps over the hump'
-THE_LAZY_FOX = 'the lazy brown fox jumps over the hump'
-THE_FOX_LAZY = 'the fox lazy brown jumps over the hump'
-THE_FOX_INPUT_IR = 'the hump lazy brown fox fox fox jumps'
+THE_COMBINED_A_FOX = "the á lazy brown fox jumps over the hump"
+THE_LAZY_FOX = "the lazy brown fox jumps over the hump"
+THE_FOX_LAZY = "the fox lazy brown jumps over the hump"
+THE_FOX_INPUT_IR = "the hump lazy brown fox fox fox jumps"
 
 
 def test_metric_unicode_normalization_textual_metric():
-    """default OCR-D compliant UTF-8 normalization 
+    """default OCR-D compliant UTF-8 normalization
     yield similarity of 95%"
     """
 
@@ -41,7 +41,7 @@ def test_metric_characters_from_empty_gt():
     # arrange
     _metric = digem.MetricChars()
     # _metric.preprocessings = [_filter_whitespaces]
-    _metric.reference = ''
+    _metric.reference = ""
     _metric.candidate = THE_LAZY_FOX
 
     # assert
@@ -53,8 +53,8 @@ def test_metric_letter_from_empty_gt_and_empty_candidate():
 
     # arrange
     _metric = digem.MetricLetters()
-    _metric.reference = ''
-    _metric.candidate = ''
+    _metric.reference = ""
+    _metric.candidate = ""
 
     # assert
     assert 100.0 == _metric.value
@@ -107,8 +107,8 @@ def test_metric_bow_from_empty_gt_and_empty_candidate():
 
     # arrange
     _metric = digem.MetricBoW()
-    _metric.reference = ''
-    _metric.candidate = ''
+    _metric.reference = ""
+    _metric.candidate = ""
 
     # act
     _actual = _metric.value
@@ -174,8 +174,8 @@ def test_bow_ocrd_spec_similarity_rate_ref_contains_less_data():
 def test_metric_character_accuracy():
     """simple usage of MetricsCA"""
 
-    str1 = 'sthe lazy brown fox jumps overthe hump'
-    str2 = 'fthe lazy brown fox jumps ouer the hump'
+    str1 = "sthe lazy brown fox jumps overthe hump"
+    str2 = "fthe lazy brown fox jumps ouer the hump"
 
     # arrange
     char_metric = digem.MetricChars()
@@ -193,8 +193,8 @@ def test_metric_character_zd1_0002():
     """
 
     # arrange
-    src_candidate = TEST_RES_DIR / 'candidate' / 'frk_alto' / '1667522809_J_0001_0002.xml'
-    src_reference = TEST_RES_DIR / 'groundtruth' / 'page' / '1667522809_J_0001_0002.art.gt.xml'
+    src_candidate = TEST_RES_DIR / "candidate" / "frk_alto" / "1667522809_J_0001_0002.xml"
+    src_reference = TEST_RES_DIR / "groundtruth" / "page" / "1667522809_J_0001_0002.art.gt.xml"
     frame_gt = digeo.get_bounding_box(src_reference)
     raw_can, candidate_lines = dipre.file_to_text(src_candidate, frame_gt)
     spatial_report = {}
@@ -216,7 +216,7 @@ def test_metric_bot_ident():
     gt1 = "the lazy brown fox jumps over the hump again and again three times the dude"
     list2 = list(gt1.split())
     random.shuffle(list2)
-    str2 = ' '.join(list2)
+    str2 = " ".join(list2)
 
     result = digem.bag_of_tokens(gt1.split(), str2.split())
     assert 1.0 == pytest.approx(result, rel=1e-2)
@@ -228,7 +228,7 @@ def test_metric_bot_candidate_with_only_repetitions():
     Behaviour of BOW with multiple identical entries
     """
 
-    gt1  = "the dizzy brown fox jumps"
+    gt1 = "the dizzy brown fox jumps"
     str2 = "the dizzy brown fox fox fox jumps"
 
     # actsert
@@ -259,7 +259,7 @@ def test_ir_metric_precision_fox():
 
     # assert
     assert 100.0 == pytest.approx(actual, rel=1e-2)
-    assert {'brown', 'fox', 'jumps', 'lazy', 'hump'} == m_prec.data_reference
+    assert {"brown", "fox", "jumps", "lazy", "hump"} == m_prec.data_reference
 
 
 def test_ir_metric_recall_fox():
@@ -276,10 +276,10 @@ def test_ir_metric_recall_fox():
 
     # assert
     assert 100.0 == pytest.approx(actual, rel=1e-2)
-    assert {'brown', 'fox', 'jumps', 'lazy', 'hump'} == m_prec.data_reference
+    assert {"brown", "fox", "jumps", "lazy", "hump"} == m_prec.data_reference
 
 
-IR_CANDIDATE_TEXT = 'the red fox'
+IR_CANDIDATE_TEXT = "the red fox"
 
 
 def test_ir_metrics_precision_english_poor_candidate():
@@ -293,8 +293,8 @@ def test_ir_metrics_precision_english_poor_candidate():
 
     # assert
     assert 50.0 == pytest.approx(pre.value, 0.01)
-    assert {'brown', 'fox', 'jumps', 'lazy', 'hump'} == pre.data_reference
-    assert {'red', 'fox'} == pre.data_candidate
+    assert {"brown", "fox", "jumps", "lazy", "hump"} == pre.data_reference
+    assert {"red", "fox"} == pre.data_candidate
 
 
 def test_ir_metrics_recall_english_poor_candidate():
@@ -310,16 +310,17 @@ def test_ir_metrics_recall_english_poor_candidate():
     assert 20.0 == pytest.approx(rec.value, 0.01)
 
 
-IR_CANDIDATE_TEXT_GERMAN = 'dieser faule Fuchs springt die Hecke'
-IR_REFERENCE_TEXT_GERMAN = 'Fuchs springt faule Hecke'
-IR_REFERENCE_TEXT_GERMAN_POOR = 'forsche Fuchs hopst'
+IR_CANDIDATE_TEXT_GERMAN = "dieser faule Fuchs springt die Hecke"
+IR_REFERENCE_TEXT_GERMAN = "Fuchs springt faule Hecke"
+IR_REFERENCE_TEXT_GERMAN_POOR = "forsche Fuchs hopst"
+
 
 def test_ir_metrics_precision_german():
     """Candidate with german phrase
     and very nice candidate precision"""
 
     # arrange
-    prec = digem.MetricIRPre(languages=['german'])
+    prec = digem.MetricIRPre(languages=["german"])
     prec.reference = IR_REFERENCE_TEXT_GERMAN
     prec.candidate = IR_CANDIDATE_TEXT_GERMAN
 
@@ -332,7 +333,7 @@ def test_ir_metrics_recall_german():
     and very nice candidate recall"""
 
     # arrange
-    rec = digem.MetricIRRec(languages=['german'])
+    rec = digem.MetricIRRec(languages=["german"])
     rec.reference = IR_REFERENCE_TEXT_GERMAN
     rec.candidate = IR_CANDIDATE_TEXT_GERMAN
 
@@ -345,7 +346,7 @@ def test_ir_metrics_precision_german_poor_candidate():
     and rather poor candidate"""
 
     # arrange
-    metric_pre = digem.MetricIRPre(languages=['german'])
+    metric_pre = digem.MetricIRPre(languages=["german"])
     metric_pre.reference = IR_CANDIDATE_TEXT_GERMAN
     metric_pre.candidate = IR_REFERENCE_TEXT_GERMAN_POOR
 
@@ -358,7 +359,7 @@ def test_ir_metrics_recall_german_poor_candidate():
     and rather poor candidate"""
 
     # arrange
-    metric_rec = digem.MetricIRRec(languages=['german'])
+    metric_rec = digem.MetricIRRec(languages=["german"])
     metric_rec.reference = IR_CANDIDATE_TEXT_GERMAN
     metric_rec.candidate = IR_REFERENCE_TEXT_GERMAN_POOR
 
@@ -391,7 +392,6 @@ def test_metrics_token_based_more_gt_than_tc():
     value = m_word.value
     assert 28.57 == pytest.approx(value, rel=1e-2)
     assert len(cand.split()) + 3 == len(gt1.split())
-
 
 
 ########################################################### OCR-Pipeline-Tests

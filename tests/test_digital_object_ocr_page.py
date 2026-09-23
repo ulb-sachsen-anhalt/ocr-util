@@ -14,7 +14,7 @@ from tests.conftest import (
 )
 
 
-@pytest.fixture(name='odem01', scope='module')
+@pytest.fixture(name="odem01", scope="module")
 def _fixture_odem01():
     """Check basic behavior:
     * a piece shall contain all its digital_objects
@@ -22,7 +22,7 @@ def _fixture_odem01():
       digital_objects from other super-piece
     """
 
-    ocr_path = f'{TEST_RES_DIR}/groundtruth/page/urn+nbn+de+gbv+3+1-115907-p0042-0_ger.gt.xml'
+    ocr_path = f"{TEST_RES_DIR}/groundtruth/page/urn+nbn+de+gbv+3+1-115907-p0042-0_ger.gt.xml"
     page_piece = to_digital_object(ocr_path)
     yield page_piece
 
@@ -30,7 +30,7 @@ def _fixture_odem01():
 def test_to_digital_objects_page_odem_transkribus_gt():
     """Ensure PAGE 2013 Transcribus Groundtruth works"""
 
-    ocr_path = f'{TEST_RES_DIR}/groundtruth/page/urn+nbn+de+gbv+3+1-115907-p0042-0_ger.gt.xml'
+    ocr_path = f"{TEST_RES_DIR}/groundtruth/page/urn+nbn+de+gbv+3+1-115907-p0042-0_ger.gt.xml"
 
     # act
     page_piece = to_digital_object(ocr_path)
@@ -47,7 +47,7 @@ def test_to_digital_objects_page_odem_transkribus_gt():
 
     # first line textual content
     line1_text = page_piece.children[0].children[0].transcription
-    assert line1_text == 'und erklaͤret die Schrift nicht nur al⸗'
+    assert line1_text == "und erklaͤret die Schrift nicht nur al⸗"
     assert len(line1_text) == 39
     # first region textual content ...
     region_text = page_piece.children[0].transcription
@@ -62,7 +62,7 @@ def test_to_digital_objects_page_odem_transkribus_gt():
 def test_to_digital_objects_page_odem():
     """Ensure PAGE 2019 straight from OCR-D ODEM is usable"""
 
-    ocr_path = f'{TEST_RES_DIR}/candidate/frk_page/urn+nbn+de+gbv+3+1-115907-p0042-0_ger.xml'
+    ocr_path = f"{TEST_RES_DIR}/candidate/frk_page/urn+nbn+de+gbv+3+1-115907-p0042-0_ger.xml"
 
     # act
     page_piece = to_digital_object(ocr_path)
@@ -77,7 +77,7 @@ def test_to_digital_objects_page_odem():
 
     # first line textual content
     line1_text = page_piece.children[2].children[0].transcription
-    assert line1_text == 'und erklaͤret die Schrift nicht nur al⸗'
+    assert line1_text == "und erklaͤret die Schrift nicht nur al⸗"
     assert page_piece.children[2].children[0].transcription == line1_text
 
 
@@ -103,7 +103,7 @@ def test_digital_objects_odem01_page_not_in_region(odem01):
         assert odem01 not in odem01.children[0]
 
     # assert
-    assert 'is higher/equal level than region0003' in _rer.value.args[0]
+    assert "is higher/equal level than region0003" in _rer.value.args[0]
 
 
 @pytest.mark.skip(reason="fails due geometry checks, needs fixing in test data")
@@ -121,15 +121,15 @@ def test_digital_objects_transcription_from_rahbar_1771946695():
     """
 
     # arrange
-    ocr_path = f'{TEST_RES_DIR}/groundtruth/page/rahbar-1771946695-00000040.xml'
+    ocr_path = f"{TEST_RES_DIR}/groundtruth/page/rahbar-1771946695-00000040.xml"
 
     # act
     page_piece: dom.DigitalObjectTree = to_digital_object(ocr_path)
 
     # assert
     assert len(page_piece.children) == 2
-    expected_first_row_transcription = '.آن نعت بگردان که مرا خواهی گفت'
-    final_token = 'گفت'
+    expected_first_row_transcription = ".آن نعت بگردان که مرا خواهی گفت"
+    final_token = "گفت"
     # get down to first line
     first_row_transcription = page_piece.children[0].children[0].transcription
     assert first_row_transcription == expected_first_row_transcription
@@ -141,14 +141,14 @@ def test_digital_objects_geometry_from_rahbar_1185565752():
     """Test problematic data behavior"""
 
     # arrange
-    ocr_path = f'{TEST_RES_DIR}/groundtruth/page/rahbar-1185565752-00000086.xml'
+    ocr_path = f"{TEST_RES_DIR}/groundtruth/page/rahbar-1185565752-00000086.xml"
 
     # act
     with pytest.raises(RuntimeError) as _err:
         to_digital_object(ocr_path)
 
     # assert
-    assert 'Word@ID=w_243 invalid ' in str(_err.value.args[0])
+    assert "Word@ID=w_243 invalid " in str(_err.value.args[0])
 
 
 def test_digital_object_from_odem_kba_transformed():
@@ -159,7 +159,7 @@ def test_digital_object_from_odem_kba_transformed():
 
     # urn+nbn+de+gbv+3+1-112032-p0026-5_ger.gt
     # arrange
-    ocr_path = f'{TEST_RES_DIR}/groundtruth/page/urn+nbn+de+gbv+3+1-112032-p0026-5_ger.gt.xml'
+    ocr_path = f"{TEST_RES_DIR}/groundtruth/page/urn+nbn+de+gbv+3+1-112032-p0026-5_ger.gt.xml"
 
     # act
     dot: dom.DigitalObjectTree = to_digital_object(ocr_path)
@@ -167,7 +167,7 @@ def test_digital_object_from_odem_kba_transformed():
     # assert
     assert dot is not None
     assert dot.level == dom.DigitalObjectLevel.PAGE
-    first_line_text = '„dem Staube, es wird Ernſt!“ fluͤſterte er'
+    first_line_text = "„dem Staube, es wird Ernſt!“ fluͤſterte er"
     assert dot.children[0].children[0].transcription == first_line_text
 
 
@@ -179,7 +179,7 @@ def test_digital_object_from_ocr4all_groundtruth():
 
     # urn+nbn+de+gbv+3+1-112032-p0026-5_ger.gt
     # arrange
-    ocr_path = f'{TEST_RES_DIR}/groundtruth/page/urn+nbn+de+gbv+3+5-14325-fp-00000441.xml'
+    ocr_path = f"{TEST_RES_DIR}/groundtruth/page/urn+nbn+de+gbv+3+5-14325-fp-00000441.xml"
 
     # act
     tho_tree: dom.DigitalObjectTree = to_digital_object(ocr_path)
@@ -188,38 +188,38 @@ def test_digital_object_from_ocr4all_groundtruth():
     assert tho_tree is not None
     assert tho_tree.level == dom.DigitalObjectLevel.PAGE
     # According to reading order, first region is r20 (index 0)
-    assert tho_tree.children[0].id == 'r20'
-    assert tho_tree.children[0].children[0].transcription == 'MAR'
+    assert tho_tree.children[0].id == "r20"
+    assert tho_tree.children[0].children[0].transcription == "MAR"
     # Region r1 with 'Maréchal, sm. dignité, مير' is at reading order index 12
-    assert tho_tree.children[12].id == 'r1'
-    assert tho_tree.children[12].children[0].transcription == 'Maréchal, sm. dignité, مير'
+    assert tho_tree.children[12].id == "r1"
+    assert tho_tree.children[12].children[0].transcription == "Maréchal, sm. dignité, مير"
 
 
 def test_digital_object_inconsistent_geometry(capsys):
     """Behavior with inconsistent geometry
-    
+
     changed 2026-05-06: print alert to stdout, but go on processing.
     """
 
     # urn+nbn+de+gbv+3+1-112032-p0026-5_ger.gt
     # arrange
-    ocr_path = f'{TEST_RES_DIR}/groundtruth/page/1751466019_18481220.xml'
+    ocr_path = f"{TEST_RES_DIR}/groundtruth/page/1751466019_18481220.xml"
 
     # act
     to_digital_object(ocr_path)
 
     # assert
     captured = capsys.readouterr()
-    assert 'not contained in parent box' in captured.out
+    assert "not contained in parent box" in captured.out
 
 
 def test_invalid_page_from_vlm():
-    """Fix behavior with previously invalid PAGE data - problem was 
+    """Fix behavior with previously invalid PAGE data - problem was
     our way of determing namespaces"""
 
     # urn+nbn+de+gbv+3+1-112032-p0026-5_ger.gt
     # arrange
-    ocr_path = f'{TEST_RES_DIR}/xml/0001.xml'
+    ocr_path = f"{TEST_RES_DIR}/xml/0001.xml"
 
     # act
     dtr = to_digital_object(ocr_path)

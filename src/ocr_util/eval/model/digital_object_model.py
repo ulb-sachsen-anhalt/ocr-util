@@ -55,9 +55,7 @@ class DigitalObjectTree:
 
     @property
     def file_format(self) -> DigitalObjectTreeOCRFileFormat:
-        return (
-            self.parent.file_format if self.parent is not None else self.__file_format
-        )
+        return self.parent.file_format if self.parent is not None else self.__file_format
 
     @property
     def document(self) -> Document:
@@ -74,10 +72,7 @@ class DigitalObjectTree:
     @dimensions.setter
     def dimensions(self, dims: DigitalObjectDimensions) -> None:
         self.__dimensions = dims
-        if (
-            self.__file_format != DigitalObjectTreeOCRFileFormat.UNKNOWN
-            and self.__set_dimensions_in_xml(dims)
-        ):
+        if self.__file_format != DigitalObjectTreeOCRFileFormat.UNKNOWN and self.__set_dimensions_in_xml(dims):
             DigitalObjectChanges.resized_elements.append(self.xml_element)
 
     def as_box(self):
@@ -118,8 +113,8 @@ class DigitalObjectTree:
             removable_tags: typing.List[str] = []
             if piece.file_format == DigitalObjectTreeOCRFileFormat.ALTO_V3:
                 removable_tags.append("SP")
-            removed_elements: typing.List[Element] = (
-                MinidomUtil.remove_element_and_clear_parent(element, removable_tags)
+            removed_elements: typing.List[Element] = MinidomUtil.remove_element_and_clear_parent(
+                element, removable_tags
             )
             DigitalObjectChanges.removed_elements.extend(removed_elements)
 
@@ -171,9 +166,7 @@ class DigitalObjectTree:
             raise RuntimeError(f"{other_piece.id}: other has invalid dimensions!")
         # check order invariant
         if self.level < other_piece.level or self.level == other_piece.level:
-            raise RuntimeError(
-                f"other {other_piece.id} is higher/equal level than {self.id}!"
-            )
+            raise RuntimeError(f"other {other_piece.id} is higher/equal level than {self.id}!")
         # Go for centriod for real life
         # cases where word bounds
         # scratch over region borders
@@ -223,9 +216,7 @@ class DigitalObjectTree:
             if MinidomUtil.set_attribute(xml_element, "points", points):
                 has_changed = True
         else:
-            raise NotImplementedError(
-                f'__set_dimensions_in_xml() not implemented for "{self.file_format}"'
-            )
+            raise NotImplementedError(f'__set_dimensions_in_xml() not implemented for "{self.file_format}"')
         return has_changed
 
 

@@ -14,50 +14,50 @@ def test_reading_order_respected():
     """
 
     # arrange
-    xml_path = f'{TEST_RES_DIR}/groundtruth/page/reading_order_respected.xml'
+    xml_path = f"{TEST_RES_DIR}/groundtruth/page/reading_order_respected.xml"
 
     # act
     page_piece: DigitalObjectTree = to_digital_object(xml_path)
 
     # assert - regions should be in reading order, not DOM order
     assert len(page_piece.children) == 3
-    assert page_piece.children[0].id == 'region_003'
-    assert page_piece.children[0].transcription == 'First region text'
-    assert page_piece.children[1].id == 'region_001'
-    assert page_piece.children[1].transcription == 'Second region text'
-    assert page_piece.children[2].id == 'region_002'
-    assert page_piece.children[2].transcription == 'Third region text'
+    assert page_piece.children[0].id == "region_003"
+    assert page_piece.children[0].transcription == "First region text"
+    assert page_piece.children[1].id == "region_001"
+    assert page_piece.children[1].transcription == "Second region text"
+    assert page_piece.children[2].id == "region_002"
+    assert page_piece.children[2].transcription == "Third region text"
 
 
 def test_reading_order_with_missing_regions():
     """Test that regions without reading order indices are placed after ordered ones"""
 
     # arrange
-    xml_path = f'{TEST_RES_DIR}/groundtruth/page/reading_order_with_missing_regions.xml'
+    xml_path = f"{TEST_RES_DIR}/groundtruth/page/reading_order_with_missing_regions.xml"
 
     # act
     page_piece: DigitalObjectTree = to_digital_object(xml_path)
 
     # assert - region_002 (with reading order) should come first
     assert len(page_piece.children) == 2
-    assert page_piece.children[0].id == 'region_002'
-    assert page_piece.children[0].transcription == 'Has reading order'
-    assert page_piece.children[1].id == 'region_001'
-    assert page_piece.children[1].transcription == 'No reading order'
+    assert page_piece.children[0].id == "region_002"
+    assert page_piece.children[0].transcription == "Has reading order"
+    assert page_piece.children[1].id == "region_001"
+    assert page_piece.children[1].transcription == "No reading order"
 
 
 def test_no_reading_order_element():
     """Test that regions work correctly when no ReadingOrder element exists"""
 
     # arrange
-    xml_path = f'{TEST_RES_DIR}/groundtruth/page/no_reading_order_element.xml'
+    xml_path = f"{TEST_RES_DIR}/groundtruth/page/no_reading_order_element.xml"
 
     # act
     page_piece: DigitalObjectTree = to_digital_object(xml_path)
 
     # assert - without reading order, should maintain DOM order
     assert len(page_piece.children) == 2
-    assert page_piece.children[0].id == 'region_001'
-    assert page_piece.children[0].transcription == 'First in DOM'
-    assert page_piece.children[1].id == 'region_002'
-    assert page_piece.children[1].transcription == 'Second in DOM'
+    assert page_piece.children[0].id == "region_001"
+    assert page_piece.children[0].transcription == "First in DOM"
+    assert page_piece.children[1].id == "region_002"
+    assert page_piece.children[1].transcription == "Second in DOM"

@@ -272,9 +272,7 @@ def test_aggregate_generic_with_type_strategy(evaluated_single_pair):
     # arrange - reuse pre-evaluated entries
     evaluator = _make_evaluator(evaluated_single_pair)
 
-    type_strategy = digev.AggregationStrategy(
-        [digev.AggregationDimension("type", digev.TypeExtractor())]
-    )
+    type_strategy = digev.AggregationStrategy([digev.AggregationDimension("type", digev.TypeExtractor())])
 
     # act
     evaluator.aggregate_generic(type_strategy)
@@ -294,11 +292,7 @@ def test_aggregate_generic_with_custom_metadata(evaluated_single_pair):
         entry.tags["version"] = "5.0"
 
     metadata_strategy = digev.AggregationStrategy(
-        [
-            digev.AggregationDimension(
-                "engine", digev.CustomMetadataExtractor("ocr_engine")
-            )
-        ]
+        [digev.AggregationDimension("engine", digev.CustomMetadataExtractor("ocr_engine"))]
     )
 
     # act
@@ -372,9 +366,7 @@ def test_mets_mods_extractor_genre():
     entry = digev.EvalEntry(Path("/test/1667522809_J_0001_0002.xml"))
     entry.path_groundtruth = Path("/test/1667522809_J_0001_0002.art.gt.xml")
 
-    extractor = digev.METSModsExtractor(
-        mets_file_path=mets_path, xpath_expression=".//mods:genre"
-    )
+    extractor = digev.METSModsExtractor(mets_file_path=mets_path, xpath_expression=".//mods:genre")
 
     # act
     result = extractor(entry)
@@ -391,9 +383,7 @@ def test_mets_mods_extractor_date():
     entry = digev.EvalEntry(Path("/test/1667522809_J_0001_0002.xml"))
     entry.path_groundtruth = Path("/test/1667522809_J_0001_0002.art.gt.xml")
 
-    extractor = digev.METSModsExtractor(
-        mets_file_path=mets_path, xpath_expression=".//mods:originInfo/mods:dateIssued"
-    )
+    extractor = digev.METSModsExtractor(mets_file_path=mets_path, xpath_expression=".//mods:originInfo/mods:dateIssued")
 
     # act
     result = extractor(entry)
@@ -410,9 +400,7 @@ def test_mets_mods_extractor_publisher():
     entry = digev.EvalEntry(Path("/test/test_announcement.xml"))
     entry.path_groundtruth = Path("/test/test_announcement.ann.gt.xml")
 
-    extractor = digev.METSModsExtractor(
-        mets_file_path=mets_path, xpath_expression=".//mods:originInfo/mods:publisher"
-    )
+    extractor = digev.METSModsExtractor(mets_file_path=mets_path, xpath_expression=".//mods:originInfo/mods:publisher")
 
     # act
     result = extractor(entry)
@@ -536,9 +524,7 @@ def test_mets_mods_extractor_multiple_files():
         xpath_expression=".//mods:language/mods:languageTerm[@type='code']",
     )
 
-    genre_extractor = digev.METSModsExtractor(
-        mets_file_path=mets_path, xpath_expression=".//mods:genre"
-    )
+    genre_extractor = digev.METSModsExtractor(mets_file_path=mets_path, xpath_expression=".//mods:genre")
 
     # act
     lang1 = language_extractor(entry1)
@@ -744,9 +730,7 @@ def test_value_transform_extractor_applies_transform():
     entry = digev.EvalEntry(Path("/test/1667522809_J_0001_0002.xml"))
     entry.path_groundtruth = Path("/test/1667522809_J_0001_0002.art.gt.xml")
 
-    inner = digev.METSModsExtractor(
-        mets_file_path=mets_path, xpath_expression=".//mods:originInfo/mods:dateIssued"
-    )
+    inner = digev.METSModsExtractor(mets_file_path=mets_path, xpath_expression=".//mods:originInfo/mods:dateIssued")
     extractor = digev.ValueTransformExtractor(inner, digev.decade_transform)
 
     # act
@@ -764,9 +748,7 @@ def test_value_transform_extractor_none_from_inner_propagates():
     entry = digev.EvalEntry(Path("/test/nonexistent_file.xml"))
     entry.path_groundtruth = Path("/test/nonexistent_file.gt.xml")
 
-    inner = digev.METSModsExtractor(
-        mets_file_path=mets_path, xpath_expression=".//mods:originInfo/mods:dateIssued"
-    )
+    inner = digev.METSModsExtractor(mets_file_path=mets_path, xpath_expression=".//mods:originInfo/mods:dateIssued")
     extractor = digev.ValueTransformExtractor(inner, digev.decade_transform)
 
     # act

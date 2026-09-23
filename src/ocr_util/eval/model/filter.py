@@ -13,7 +13,6 @@ import ocr_util.eval.model.digital_object_model as mdom
 import ocr_util.eval.model.digital_object_util as mdou
 
 
-
 class PolygonFrameFilterReport(typing.NamedTuple):
     """report container for structual manipulations"""
 
@@ -36,9 +35,7 @@ class PolygonFrameFilterUtil:
             )
         points_str: str = a_match.string
         point_strs_arr: typing.List[str] = points_str.split(" ")
-        points_arr: typing.List[Point] = list(
-            map(PolygonFrameFilterUtil.__str_to_point, point_strs_arr)
-        )
+        points_arr: typing.List[Point] = list(map(PolygonFrameFilterUtil.__str_to_point, point_strs_arr))
         if len(points_arr) == 2:
             topleft: Point = points_arr[0]
             bottomright: Point = points_arr[1]

@@ -49,10 +49,7 @@ def test_solr_strategy_resolves_handle_from_handle_field(mock_get: Mock) -> None
         url="https://opendata.uni-halle.de/solr/search/select?q=test",
         payload={
             "response": {
-                "docs": [{
-                    "handle": "123/456",
-                    "local.mets.uri": "https://opendata.uni-halle.de/handle/123/456"
-                }]
+                "docs": [{"handle": "123/456", "local.mets.uri": "https://opendata.uni-halle.de/handle/123/456"}]
             }
         },
     )
@@ -73,10 +70,7 @@ def test_solr_strategy_resolves_handle_from_local_mets_uri(mock_get: Mock) -> No
         url="https://opendata2.uni-halle.de/solr/search/select?q=test",
         payload={
             "response": {
-                "docs": [{
-                    "handle": "345/678",
-                    "local.mets.uri": "https://opendata2.uni-halle.de/handle/345/678"
-                }]
+                "docs": [{"handle": "345/678", "local.mets.uri": "https://opendata2.uni-halle.de/handle/345/678"}]
             }
         },
     )
@@ -93,7 +87,9 @@ def test_solr_strategy_resolves_handle_from_local_mets_uri(mock_get: Mock) -> No
 def test_handle_resolver_chain_falls_back_from_solr_to_nbn(mock_get: Mock) -> None:
     """Fall back to NBN when SOLR cannot resolve a matching document."""
     mock_get.side_effect = [
-        DummyResponse(ok=True, url="https://opendata.uni-halle.de/solr/search/select", payload={"response": {"docs": []}}),
+        DummyResponse(
+            ok=True, url="https://opendata.uni-halle.de/solr/search/select", payload={"response": {"docs": []}}
+        ),
         DummyResponse(
             ok=True,
             url="https://opendata.uni-halle.de/handle/777/999",
@@ -167,7 +163,7 @@ def test_record_metadata_resolver_raises_without_oai_base_url_mapping(
 @patch("ocr_util.corpus.load_metadata.requests.get")
 def test_oai_pmh_client_detects_error_response(mock_get: Mock) -> None:
     """Raise CorpusException when OAI-PMH returns an error element."""
-    oai_error_response = b'''<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="static/style.xsl"?><OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd"><responseDate>2026-05-08T06:58:05Z</responseDate><request verb="GetRecord" identifier="oai:opendata.uni-halle.de:opendata.uni-halle.de/1981185920/113883" metadataPrefix="mets">https://opendata.uni-halle.de/oai/dd</request><error code="idDoesNotExist">The given id does not exist</error></OAI-PMH>'''
+    oai_error_response = b"""<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="static/style.xsl"?><OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd"><responseDate>2026-05-08T06:58:05Z</responseDate><request verb="GetRecord" identifier="oai:opendata.uni-halle.de:opendata.uni-halle.de/1981185920/113883" metadataPrefix="mets">https://opendata.uni-halle.de/oai/dd</request><error code="idDoesNotExist">The given id does not exist</error></OAI-PMH>"""
     mock_get.return_value = DummyResponse(
         ok=True,
         url="https://opendata.uni-halle.de/oai/dd",

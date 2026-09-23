@@ -37,7 +37,6 @@ FALLBACK_IDX_BASE_URLS = {
 }
 
 
-
 @dataclasses.dataclass(frozen=True)
 class RecordResolutionResult:
     """Normalized result of a handle lookup attempt.

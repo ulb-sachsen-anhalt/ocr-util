@@ -13,6 +13,7 @@ import ocr_util.eval.model.filter as dofi
 import ocr_util.eval.cli as eval_cli
 import ocr_util.slice.cli as slice_cli
 import ocr_util.show.cli as show_cli
+import ocr_util.corpus.analyse as corpus_analyse
 import ocr_util.corpus.generate_corpus as gc
 
 from ocr_util.corpus.common import CorpusArgs
@@ -21,10 +22,9 @@ from ocr_util.corpus.common import CorpusArgs
 DEFAULT_VERBOSITY = 0
 SUB_CMD_FRAME = "frame"
 SUB_CMD_GROUNDTRUTH_CORPUS = "corpus"
+SUB_CMD_CORPUS_ANALYSE = "corpus-analyse"
 CORPUS_CACHE_DIR_NAME = "ocr_util_corpus_mets_cache"
-CORPUS_CACHE_DIR = os.path.join(
-    os.path.expanduser("~"), ".cache", CORPUS_CACHE_DIR_NAME
-)
+CORPUS_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", CORPUS_CACHE_DIR_NAME)
 
 SUB_CMD_EVALUATE = "eval"
 SUB_CMD_SLICE = "slice"
@@ -44,9 +44,7 @@ def points_type(points: str) -> str:
 def start() -> None:
     # Configure logging once, centrally
     logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s [%(levelname)s][%(name)s] %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        level=logging.INFO, format="%(asctime)s [%(levelname)s][%(name)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
     arg_parser: argparse.ArgumentParser = argparse.ArgumentParser(
         prog="ocr-util",
@@ -72,9 +70,7 @@ def start() -> None:
         required=False,
         help=f"Verbosity flag. To increase, append multiple 'v's (optional; default: '{DEFAULT_VERBOSITY}')",
     )
-    frame_arg_parser.add_argument(
-        "-i", "--input-ocr-file", help="Path of OCR-Data file to process", required=True
-    )
+    frame_arg_parser.add_argument("-i", "--input-ocr-file", help="Path of OCR-Data file to process", required=True)
     frame_arg_parser.add_argument(
         "-o",
         "--output-ocr-file",
@@ -158,6 +154,12 @@ def start() -> None:
         required=False,
     )
 
+    corpus_analyse_parser = sub_arg_parsers.add_parser(
+        SUB_CMD_CORPUS_ANALYSE,
+        help="List files in an existing METS corpus that match metadata filters",
+    )
+    corpus_analyse.register_arguments(corpus_analyse_parser)
+
     # evaluate subcommand
     evaluate_arg_parser = sub_arg_parsers.add_parser(
         SUB_CMD_EVALUATE,
@@ -232,9 +234,7 @@ def start() -> None:
         default=slice_cli.DEFAULT_SANITIZE,
         help=f"optional: sanitize textline images (default: {slice_cli.DEFAULT_SANITIZE})",
     )
-    slice_arg_parser.add_argument(
-        "--no-sanitize", dest="sanitize", action="store_false"
-    )
+    slice_arg_parser.add_argument("--no-sanitize", dest="sanitize", action="store_false")
     slice_arg_parser.add_argument(
         "--intrusion-ratio",
         required=False,
@@ -269,12 +269,8 @@ def start() -> None:
         output_ocr_file: str = args.output_ocr_file
         points: str = args.points
         if verbosity > 1:
-            print(
-                f"[DEBUG] args: {input_ocr_file}, {output_ocr_file}, {points}, {verbosity}"
-            )
-        polygon_frame_filter: dofi.PolygonFrameFilter = dofi.PolygonFrameFilter(
-            input_ocr_file, points, verbosity
-        )
+            print(f"[DEBUG] args: {input_ocr_file}, {output_ocr_file}, {points}, {verbosity}")
+        polygon_frame_filter: dofi.PolygonFrameFilter = dofi.PolygonFrameFilter(input_ocr_file, points, verbosity)
         piece_result: do.DigitalObjectTree = polygon_frame_filter.process()
         file_result: PurePath = do.from_digital_object(piece_result, output_ocr_file)
         if verbosity > 0:
@@ -287,9 +283,16 @@ def start() -> None:
             local_cache_dir=Path(args.temp_dir).absolute(),
             limit=int(args.limit),
             corpus_label=args.corpus_label,
-            clear_cache=args.clear_cache
+            clear_cache=args.clear_cache,
         )
         gc.generate(corpus_args)
+
+    elif args.subcommand == SUB_CMD_CORPUS_ANALYSE:
+        analyse_args = vars(args)
+        analyse_args.pop("subcommand", None)
+        result = corpus_analyse.start_analysis(analyse_args)
+        if isinstance(result, corpus_analyse.CorpusCheckResult) and not result.is_valid:
+            raise SystemExit(1)
 
     elif args.subcommand == SUB_CMD_EVALUATE:
         eval_args = vars(args)

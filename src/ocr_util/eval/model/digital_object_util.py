@@ -23,9 +23,7 @@ class DigitalObjectUtil:
         return DigitalObjectUtil.read_data(path_in)
 
     @staticmethod
-    def from_digital_objects(
-        root_digo: DigitalObjectTree, path_out: Path = None
-    ) -> Path:
+    def from_digital_objects(root_digo: DigitalObjectTree, path_out: Path = None) -> Path:
         """Convert DigitalObject structure into a xml file"""
         if path_out is None:
             orig_file_path: Path = root_digo.file_path
@@ -64,9 +62,7 @@ class DigitalObjectUtil:
         elif doc_root.localName.lower() == "pcgts":
             piece = FormatPageUtil.extract_data(path_in)
         else:
-            raise dmc.DigitalObjectException(
-                f'Unknown Data-Format "{doc_root.localName}" in "{path_in}"'
-            )
+            raise dmc.DigitalObjectException(f'Unknown Data-Format "{doc_root.localName}" in "{path_in}"')
         return piece
 
     @staticmethod
@@ -86,9 +82,7 @@ class DigitalObjectUtil:
     def flatten(digo: DigitalObjectTree) -> List[DigitalObjectTree]:
         """flattens a DigitalObject structure"""
 
-        def flatten_recursive(
-            pc: DigitalObjectTree, digos: List[DigitalObjectTree] = None
-        ) -> List[DigitalObjectTree]:
+        def flatten_recursive(pc: DigitalObjectTree, digos: List[DigitalObjectTree] = None) -> List[DigitalObjectTree]:
             if digos is None:
                 digos = []
             digos.append(pc)

@@ -419,9 +419,7 @@ class MetsResourceFile(MetsFile):
         assert file_fulltext is not None, f"No fulltext file pointer for page with CONTENTIDS='{page_urn}'"
         return file_image, file_fulltext
 
-
-    def _create_fulltext_element(self, new_id: str, gt_file_path: pathlib.Path,
-                                 out_dir: pathlib.Path) -> ET._Element:
+    def _create_fulltext_element(self, new_id: str, gt_file_path: pathlib.Path, out_dir: pathlib.Path) -> ET._Element:
         """Create a new file element for the fulltext file with the appropriate FLocat child."""
         file_fulltext = ET.Element(
             f'{{{self.nsmap["mets"]}}}file', attrib={"ID": new_id, "MIMETYPE": "application/vnd.prima.page+xml"}

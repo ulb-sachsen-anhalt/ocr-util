@@ -10,8 +10,8 @@ import ocr_util.eval.metrics as digem
 
 def test_metric_calculate_character_edit_distance():
     """explore edit-distance"""
-    str1 = 'sthe lazy brown fox jumps overthe hump'
-    str2 = 'fthe lazy brown fox jumps ouer the hump'
+    str1 = "sthe lazy brown fox jumps overthe hump"
+    str2 = "fthe lazy brown fox jumps ouer the hump"
     distance = digem.levenshtein_norm(str1, str2)
     assert distance == pytest.approx(0.923, rel=1e-4)
 
@@ -22,7 +22,7 @@ def test_metric_bot_ident():
     gt1 = "the lazy brown fox jumps over the hump again and again three times the dude"
     list2 = list(gt1.split())
     random.shuffle(list2)
-    str2 = ' '.join(list2)
+    str2 = " ".join(list2)
 
     similarity = digem.bag_of_tokens(gt1.split(), str2.split())
     assert similarity == pytest.approx(1.0, rel=1e-3)
@@ -80,7 +80,7 @@ def test_metrics_token_based_equal():
     """No mismatch => 100.00"""
 
     # arrange
-    gt1  = "der fahle Fuchs springt über die Hecke"
+    gt1 = "der fahle Fuchs springt über die Hecke"
     cand = "der fahle Fuchs springt über die Hecke"
 
     # act

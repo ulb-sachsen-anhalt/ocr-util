@@ -202,22 +202,12 @@ class Evaluator:
             cpus = multiprocessing.cpu_count()
             n_executors = cpus // 2 if cpus > 3 else 1
             if self.verbosity == 1:
-                print(
-                    f"[DEBUG] use {n_executors} executors ({cpus}) to create evaluation data"
-                )
-            with concurrent.futures.ProcessPoolExecutor(
-                max_workers=n_executors
-            ) as executor:
+                print(f"[DEBUG] use {n_executors} executors ({cpus}) to create evaluation data")
+            with concurrent.futures.ProcessPoolExecutor(max_workers=n_executors) as executor:
                 try:
-                    _entries = list(
-                        executor.map(
-                            self._wrap_eval_entry, entries, timeout=EVAL_TIMEOUT
-                        )
-                    )
+                    _entries = list(executor.map(self._wrap_eval_entry, entries, timeout=EVAL_TIMEOUT))
                 except concurrent.futures.TimeoutError:
-                    print(
-                        f"[ERROR] takes longer than {EVAL_TIMEOUT}s to evaluate {len(entries)} entries!"
-                    )
+                    print(f"[ERROR] takes longer than {EVAL_TIMEOUT}s to evaluate {len(entries)} entries!")
                     sys.exit(1)
                 except Exception as err:
                     print(f"[ERROR] '{err}' creating evaluation data!")
@@ -227,18 +217,12 @@ class Evaluator:
         if _entries:
             _not_nones = [e for e in _entries if e is not None]
             if self.verbosity == 1:
-                print(
-                    f"[DEBUG] processed {len(_entries)}, omitted {len(_entries) - len(_not_nones)} empty results"
-                )
+                print(f"[DEBUG] processed {len(_entries)}, omitted {len(_entries) - len(_not_nones)} empty results")
             self.evaluation_entries = _not_nones
 
-        self.evaluation_entries = sorted(
-            self.evaluation_entries, key=lambda e: e.path_candidate
-        )
+        self.evaluation_entries = sorted(self.evaluation_entries, key=lambda e: e.path_candidate)
         # detail report
-        self.evaluation_report["candidates"] = [
-            self._generate_report_candidate(e) for e in self.evaluation_entries
-        ]
+        self.evaluation_report["candidates"] = [self._generate_report_candidate(e) for e in self.evaluation_entries]
 
     def _wrap_eval_entry(self, entry: EvalEntry):
         """Wrapper for creation of evaluation data
@@ -288,24 +272,16 @@ class Evaluator:
             if self.verbosity >= 2:
                 _label_ref = os.path.basename(entry.path_groundtruth)
                 _label_can = os.path.basename(entry.path_candidate)
-                print(
-                    f'[TRACE][{_label_ref}][{current.label}] REFERENCE :: "{current.data_reference}"'
-                )
-                print(
-                    f'[TRACE][{_label_can}][{current.label}] CANDIDATE :: "{current.data_candidate}"'
-                )
+                print(f'[TRACE][{_label_ref}][{current.label}] REFERENCE :: "{current.data_reference}"')
+                print(f'[TRACE][{_label_can}][{current.label}] CANDIDATE :: "{current.data_candidate}"')
 
         # enrich entry with metrics and
         # normalize data type (i.e., art or ann or ...)
-        _normed_gt_type = _normalize_gt_type(
-            _get_groundtruth_from_filename(entry.path_groundtruth)
-        )
+        _normed_gt_type = _normalize_gt_type(_get_groundtruth_from_filename(entry.path_groundtruth))
         entry.gt_type = _normed_gt_type
         entry.metrics = _current_metrics
         entry.preprocessing_reports = [
-            metric.preprocessing_report
-            for metric in _current_metrics
-            if metric.preprocessing_report is not None
+            metric.preprocessing_report for metric in _current_metrics if metric.preprocessing_report is not None
         ]
         if self.verbosity >= 2:
             self._report_entry_preprocessing(entry)
@@ -333,9 +309,7 @@ class Evaluator:
         details = step[eval_constants.STEP_DETAILS]
         detail_text = ""
         if details:
-            detail_text = " (" + ", ".join(
-                f"{name}: {value}" for name, value in details.items()
-            ) + ")"
+            detail_text = " (" + ", ".join(f"{name}: {value}" for name, value in details.items()) + ")"
         return (
             f"{step[eval_constants.STEP_NAME]}: "
             f"{step[eval_constants.STEP_BEFORE_COUNT]} "
@@ -350,10 +324,7 @@ class Evaluator:
             report = metric.preprocessing_report
             if report is None:
                 continue
-            print(
-                f"[DEBUG] preprocessing [{metric.label}] "
-                f"{report[eval_constants.REPORT_PREPROCESSOR]}"
-            )
+            print(f"[DEBUG] preprocessing [{metric.label}] " f"{report[eval_constants.REPORT_PREPROCESSOR]}")
             print(f"[DEBUG]   candidate: {entry.path_candidate}")
             print(f"[DEBUG]   reference: {entry.path_groundtruth} (full page)")
             self._report_spatial_preprocessing(report, metric)
@@ -374,9 +345,7 @@ class Evaluator:
 
     @staticmethod
     def _report_spatial_preprocessing(report, metric) -> None:
-        spatial = report[eval_constants.REPORT_CANDIDATE][
-            eval_constants.REPORT_SPATIAL
-        ]
+        spatial = report[eval_constants.REPORT_CANDIDATE][eval_constants.REPORT_SPATIAL]
         if report[eval_constants.REPORT_GEOMETRY_DISABLED]:
             print("[DEBUG]   spatial preprocessing: geometry disabled; full page")
         elif not spatial:
@@ -388,10 +357,7 @@ class Evaluator:
                 f"[DEBUG]   spatial preprocessing: reference frame "
                 f"{metric.candidate_frame[0]}-{metric.candidate_frame[1]}"
             )
-            print(
-                f"[DEBUG]     candidate page frame: "
-                f"{spatial[eval_constants.SPATIAL_CANDIDATE_PAGE_FRAME]}"
-            )
+            print(f"[DEBUG]     candidate page frame: " f"{spatial[eval_constants.SPATIAL_CANDIDATE_PAGE_FRAME]}")
             print(
                 f"[DEBUG]     frame filtering tokens: "
                 f"{spatial[eval_constants.SPATIAL_TOTAL_TOKEN]} -> "
@@ -434,11 +400,7 @@ class Evaluator:
             # also calculate statistics (mean, std)
             if len(data_points) > 1:
                 mean, std, median = get_statistics(data_points)
-                evaluation_result.mean = (
-                    _mean_weighted(data_tuples)
-                    if self.weighted_mean
-                    else mean
-                )
+                evaluation_result.mean = _mean_weighted(data_tuples) if self.weighted_mean else mean
                 evaluation_result.median = median
                 evaluation_result.std = std
                 if not self.strict_mode and std >= 1.0:
@@ -447,11 +409,7 @@ class Evaluator:
                         regulars_data_points = [e[1] for e in stripped]
                         clear_result = EvaluationResult(k, len(stripped))
                         mean2, std2, med2 = get_statistics(regulars_data_points)
-                        clear_result.mean = (
-                            _mean_weighted(stripped)
-                            if self.weighted_mean
-                            else mean2
-                        )
+                        clear_result.mean = _mean_weighted(stripped) if self.weighted_mean else mean2
                         clear_result.std = std2
                         clear_result.median = med2
                         clear_result.n_chars = sum([e[2] for e in stripped])
@@ -459,9 +417,7 @@ class Evaluator:
                         evaluation_result.cleared_result = clear_result
             self._add(evaluation_result)
             # re-order
-            self.evaluation_results = sorted(
-                self.evaluation_results, key=lambda e: e.eval_key
-            )
+            self.evaluation_results = sorted(self.evaluation_results, key=lambda e: e.eval_key)
 
     def aggregate_generic(
         self,
@@ -525,9 +481,7 @@ class Evaluator:
                 for key in agg_keys:
                     if key not in self.evaluation_map:
                         self.evaluation_map[key] = []
-                    self.evaluation_map[key].append(
-                        (entry.path_candidate, metric_value, metric_refs)
-                    )
+                    self.evaluation_map[key].append((entry.path_candidate, metric_value, metric_refs))
 
     def _get_default_aggregation_strategy(self) -> AggregationStrategy:
         """Get default aggregation strategy for backward compatibility
@@ -585,9 +539,7 @@ class Evaluator:
                     current_domain = f"{entry.metrics[_metrics_index].label}@{domain}"
                     if current_domain not in self.evaluation_map:
                         self.evaluation_map[current_domain] = []
-                    self.evaluation_map[current_domain].append(
-                        (entry.path_candidate, metric_value, metric_gt_refs)
-                    )
+                    self.evaluation_map[current_domain].append((entry.path_candidate, metric_value, metric_gt_refs))
                 # if by_type, aggregate type at top level
                 if by_type and entry.gt_type and entry.gt_type != _NOT_SET:
                     root_base = entry.candidate_root_domain.name
@@ -595,9 +547,7 @@ class Evaluator:
                     type_key = path_key + "@" + entry.gt_type
                     if type_key not in self.evaluation_map:
                         self.evaluation_map[type_key] = []
-                    self.evaluation_map[type_key].append(
-                        (entry.path_candidate, metric_value, metric_gt_refs)
-                    )
+                    self.evaluation_map[type_key].append((entry.path_candidate, metric_value, metric_gt_refs))
 
     def _check_aggregate_preconditions(self):
         if not self.evaluation_entries:
@@ -667,10 +617,7 @@ def strip_outliers_from(data_tuples, fence_ratio=1.5):
     q3 = np.median([v for v in data_points if v > median])
     iqr = q3 - q1
     regulars = [
-        data
-        for data in data_tuples
-        if data[1] >= (q1 - fence_ratio * iqr)
-        and data[1] <= (q3 + fence_ratio * iqr)
+        data for data in data_tuples if data[1] >= (q1 - fence_ratio * iqr) and data[1] <= (q3 + fence_ratio * iqr)
     ]
     return (regulars, q1, q3)
 
@@ -708,15 +655,11 @@ def report_stdout(evaluator: Evaluator, verbosity):
     _path_can = evaluator.domain_candidate
     _path_ref = evaluator.domain_reference
     evaluation_date = datetime.date.today().isoformat()
-    print(
-        f'[INFO ] Evaluation Summary (candidates: "{_path_can}" vs. reference: "{_path_ref}" ({evaluation_date})'
-    )
+    print(f'[INFO ] Evaluation Summary (candidates: "{_path_can}" vs. reference: "{_path_ref}" ({evaluation_date})')
     for result in results:
         gt_type, n_total, mean_total, med, _n_refs = result.get_defaults()
         add_stats = f" M:{med:5.2f} σ:{result.std:5.2f}" if n_total > 1 else ""
-        print(
-            f"[INFO ] {gt_type}\t{n_total: 3d} items {_n_refs:_} refs\t∅:{mean_total:5.2f}{add_stats}"
-        )
+        print(f"[INFO ] {gt_type}\t{n_total: 3d} items {_n_refs:_} refs\t∅:{mean_total:5.2f}{add_stats}")
         if result.cleared_result:
             _, n_t2, mean2, med2, n_c2 = result.cleared_result.get_defaults()
             ccr_std = result.cleared_result.std

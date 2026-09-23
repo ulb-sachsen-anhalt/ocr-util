@@ -31,9 +31,7 @@ _REQ_DATA_TEMPLATE: Final[Dict[str, str]] = {
 
 
 class LanguageTool:
-    DEFAULT_URL: Final[str] = (
-        f"{Constant.DEFAULT_PROTOCOL}{Constant.LOCAL_HOST}:{Constant.DEFAULT_PORT}"
-    )
+    DEFAULT_URL: Final[str] = f"{Constant.DEFAULT_PROTOCOL}{Constant.LOCAL_HOST}:{Constant.DEFAULT_PORT}"
 
     __instance: LanguageTool = None
 
@@ -98,14 +96,10 @@ class LanguageTool:
     def __check(self, text: str, language: str) -> Dict:
         if self.__url is None:
             raise NotInizializedException
-        return LanguageTool.__request_check_endpoint(
-            base_url=self.__url, text=text, language=language
-        )
+        return LanguageTool.__request_check_endpoint(base_url=self.__url, text=text, language=language)
 
     @classmethod
-    def __request_check_endpoint(
-        cls, base_url: str, text: str, language: str, timeout: int = 30
-    ) -> Dict:
+    def __request_check_endpoint(cls, base_url: str, text: str, language: str, timeout: int = 30) -> Dict:
         data: Dict[str, str] = copy(_REQ_DATA_TEMPLATE)
         data["data"] = json.dumps({"text": text})
         data["language"] = LANGUAGE_MAP[language].lt_variant

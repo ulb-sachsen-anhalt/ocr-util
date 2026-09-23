@@ -146,9 +146,7 @@ def century_transform(value: str) -> typing.Optional[str]:
     try:
         year = int(str(value).strip()[:4])
         century = year // 100 + 1
-        suffix = {1: "st", 2: "nd", 3: "rd"}.get(
-            century % 10 if century % 100 not in (11, 12, 13) else 0, "th"
-        )
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(century % 10 if century % 100 not in (11, 12, 13) else 0, "th")
         return f"{century}{suffix}"
     except (ValueError, TypeError):
         return None
@@ -247,9 +245,7 @@ class METSDivAttrExtractor:
 
         # physical div ID → [file hrefs]
         phys_to_hrefs: typing.Dict[str, typing.List[str]] = {}
-        for pdiv in tree.xpath(
-            '//mets:structMap[@TYPE="PHYSICAL"]//mets:div[@ID]', namespaces=ns
-        ):
+        for pdiv in tree.xpath('//mets:structMap[@TYPE="PHYSICAL"]//mets:div[@ID]', namespaces=ns):
             pid = pdiv.get("ID")
             hrefs = [
                 file_id_to_href[fid]
@@ -263,9 +259,7 @@ class METSDivAttrExtractor:
         log_to_attr: typing.Dict[str, str] = {}
         # also: DMDID → attribute value (fallback)
         dmdid_to_attr: typing.Dict[str, str] = {}
-        for ldiv in tree.xpath(
-            '//mets:structMap[@TYPE="LOGICAL"]//mets:div[@ID]', namespaces=ns
-        ):
+        for ldiv in tree.xpath('//mets:structMap[@TYPE="LOGICAL"]//mets:div[@ID]', namespaces=ns):
             lid = ldiv.get("ID")
             attr_val = ldiv.get(self.attribute)
             if lid and attr_val:
@@ -412,9 +406,7 @@ class METSModsExtractor:
         files = tree.xpath("//mets:file", namespaces=self.namespaces)
         for file_elem in files:
             file_id = file_elem.get("ID")
-            flocat = file_elem.xpath(
-                "./mets:FLocat/@xlink:href", namespaces=self.namespaces
-            )
+            flocat = file_elem.xpath("./mets:FLocat/@xlink:href", namespaces=self.namespaces)
             if not flocat:
                 continue
 
@@ -456,9 +448,7 @@ class METSModsExtractor:
                 continue
 
             hrefs = []
-            for file_id in physical_div.xpath(
-                "./mets:fptr/@FILEID", namespaces=self.namespaces
-            ):
+            for file_id in physical_div.xpath("./mets:fptr/@FILEID", namespaces=self.namespaces):
                 file_href = file_id_to_href.get(file_id)
                 if file_href:
                     hrefs.append(file_href)
@@ -467,9 +457,7 @@ class METSModsExtractor:
                 physical_div_to_hrefs[physical_id] = hrefs
 
         xlink_ns = self.namespaces.get("xlink", "http://www.w3.org/1999/xlink")
-        for link in tree.xpath(
-            "//mets:structLink/mets:smLink", namespaces=self.namespaces
-        ):
+        for link in tree.xpath("//mets:structLink/mets:smLink", namespaces=self.namespaces):
             logical_id = link.get(f"{{{xlink_ns}}}from")
             physical_id = link.get(f"{{{xlink_ns}}}to")
             if not logical_id or not physical_id:
@@ -510,9 +498,7 @@ class METSModsExtractor:
         # Apply user's XPath expression to MODS section
         for mods_section in mods_sections:
             try:
-                results = mods_section.xpath(
-                    self.xpath_expression, namespaces=self.namespaces
-                )
+                results = mods_section.xpath(self.xpath_expression, namespaces=self.namespaces)
                 if results:
                     values = []
                     for result in results:
@@ -583,15 +569,11 @@ class AggregationStrategy:
         hierarchical: If True, creates hierarchical keys combining all dimensions
     """
 
-    def __init__(
-        self, dimensions: typing.List[AggregationDimension], hierarchical: bool = False
-    ):
+    def __init__(self, dimensions: typing.List[AggregationDimension], hierarchical: bool = False):
         self.dimensions = dimensions
         self.hierarchical = hierarchical
 
-    def generate_keys(
-        self, entry: typing.Any, metric: digem.OCRMetric
-    ) -> typing.List[str]:
+    def generate_keys(self, entry: typing.Any, metric: digem.OCRMetric) -> typing.List[str]:
         """Generate aggregation keys for an evaluation entry
 
         Args:

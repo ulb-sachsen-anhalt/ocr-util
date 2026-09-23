@@ -4,27 +4,26 @@ of digital assets in OCR ALTO format
 
 import os
 from pathlib import (
-	PurePath,
+    PurePath,
 )
 
-import pytest 
+import pytest
 
 import shapely.geometry
 
 
 from ocr_util.eval.model.digital_object_model import (
-	DigitalObjectTree,
+    DigitalObjectTree,
 )
 from ocr_util.eval.model.common import (
-	DigitalObjectLevel,
+    DigitalObjectLevel,
 )
 from ocr_util.eval.model.main import (
-	to_digital_object,
+    to_digital_object,
 )
 from tests.conftest import (
-	TEST_RES_DIR,
+    TEST_RES_DIR,
 )
-
 
 
 def test_digital_object_hierarchy_bottom_up():
@@ -51,7 +50,7 @@ def test_digital_object_hierarchy_top_down():
 def test_contains_digital_object_relation():
     """Ensure DigitalObjectTypes and contains relations"""
 
-    ocr_path = os.path.join(TEST_RES_DIR, 'groundtruth/alto/1667522809_J_0073_0001_375x2050_2325x9550.xml')
+    ocr_path = os.path.join(TEST_RES_DIR, "groundtruth/alto/1667522809_J_0073_0001_375x2050_2325x9550.xml")
 
     # act
     page_piece = to_digital_object(ocr_path)
@@ -71,14 +70,13 @@ def test_contains_digital_object_relation():
 def test_digital_object_file_path():
     """Ensure type of piece property"""
 
-    ocr_path: str = f'{TEST_RES_DIR}/groundtruth/alto/1667522809_J_0073_0001_375x2050_2325x9550.xml'
+    ocr_path: str = f"{TEST_RES_DIR}/groundtruth/alto/1667522809_J_0073_0001_375x2050_2325x9550.xml"
     page_piece: DigitalObjectTree = to_digital_object(ocr_path)
     assert isinstance(page_piece.file_path, PurePath)
 
 
 def test_digital_objects_zd101_page_piece_dimension(zd101):
-    """Check ALTO page piece spans
-    """
+    """Check ALTO page piece spans"""
 
     # explore dimensions
     assert len(zd101.dimensions) == 4
@@ -112,20 +110,16 @@ def test_digital_objects_zd101_region01_dimensions(zd101):
     assert len(zd101.children) == 10
     region1 = zd101.children[0]
     line1 = region1.children[0]
-    assert region1.dimensions == [
-        [802, 2100], [1901, 2100], [1901, 2223], [802, 2223]]
+    assert region1.dimensions == [[802, 2100], [1901, 2100], [1901, 2223], [802, 2223]]
 
     # this region has only one line
     assert len(region1.children) == 1
     # which is completely same as region
-    assert line1.dimensions == [[802, 2100],
-                                [1901, 2100], [1901, 2223], [802, 2223]]
+    assert line1.dimensions == [[802, 2100], [1901, 2100], [1901, 2223], [802, 2223]]
     assert region1.dimensions == line1.dimensions
     # this line has two words
     assert len(line1.children) == 2
     word1 = line1.children[0]
     # coords for word01 differ sligthly from line
-    assert word1.dimensions == [[802, 2101],
-                                [1246, 2101], [1246, 2219], [802, 2219]]
+    assert word1.dimensions == [[802, 2101], [1246, 2101], [1246, 2219], [802, 2219]]
     assert word1 in line1 and line1 in region1
-

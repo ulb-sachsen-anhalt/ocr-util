@@ -174,9 +174,7 @@ def test_all_metrics_legacy_and_recent_identical():
         metric.candidate = recent_text
         recent_score = metric.value
 
-        assert legacy_score == recent_score, (
-            f"{metric_name}: legacy ({legacy_score}%) != recent ({recent_score}%)"
-        )
+        assert legacy_score == recent_score, f"{metric_name}: legacy ({legacy_score}%) != recent ({recent_score}%)"
 
 
 def test_end_to_end_evaluation_legacy_and_recent_identical():
@@ -196,28 +194,28 @@ def test_end_to_end_evaluation_legacy_and_recent_identical():
     gt_digo = mmain.to_digital_object(GT_FILE)
     legacy_digo = mmain.to_digital_object(LEGACY_FILE)
     recent_digo = mmain.to_digital_object(RECENT_FILE)
-    
+
     metric = digem.MetricChars()
-    
+
     # act - compare via direct text extraction (same as unit tests)
     gt_text = gt_digo.transcription
     legacy_text = legacy_digo.transcription
     recent_text = recent_digo.transcription
-    
+
     metric.reference = gt_text
     metric.candidate = legacy_text
     legacy_value = metric.value
-    
+
     metric.reference = gt_text
     metric.candidate = recent_text
     recent_value = metric.value
-    
+
     # assert - direct comparison should match
-    assert legacy_value == recent_value, (
-        f"Direct text evaluation mismatch: legacy={legacy_value}, recent={recent_value}"
-    )
+    assert (
+        legacy_value == recent_value
+    ), f"Direct text evaluation mismatch: legacy={legacy_value}, recent={recent_value}"
     assert legacy_value > 0, "Evaluation produced invalid metric"
-    
+
     # Document: The Evaluator pipeline uses spatial frame extraction,
     # which depends on coordinate metadata. Version compatibility is verified
     # through direct text comparison as demonstrated here and in the other

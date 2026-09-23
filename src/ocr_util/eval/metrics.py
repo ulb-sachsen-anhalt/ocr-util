@@ -211,12 +211,8 @@ class MetricDictionaryLangTool(MetricDictionary):
         text: str = self.data_candidate
         text_list: typing.List[str] = self.data_candidate.split()
         n_tokens: int = len(text_list)
-        lt_response_data: typing.Dict = LanguageTool.check(
-            text, MetricDictionary.LANGUAGE
-        )
-        total_matches = (
-            lt_response_data["matches"] if "matches" in lt_response_data else 0
-        )
+        lt_response_data: typing.Dict = LanguageTool.check(text, MetricDictionary.LANGUAGE)
+        total_matches = lt_response_data["matches"] if "matches" in lt_response_data else 0
         typo_errors = len(total_matches)
         self.diff = typo_errors if typo_errors <= n_tokens else n_tokens
 
@@ -236,9 +232,7 @@ def levenshtein_norm(reference_data, candidate_data, inverse=False) -> int:
     return rfls.normalized_similarity(reference_data, candidate_data)
 
 
-def bag_of_tokens(
-    reference_tokens: typing.List[str], candidate_tokens: typing.List[str]
-) -> int:
+def bag_of_tokens(reference_tokens: typing.List[str], candidate_tokens: typing.List[str]) -> int:
     """Calculate difference between reference and candidate token list"""
     false_negatives: typing.List[str] = _diff(reference_tokens, candidate_tokens)
     false_positives: typing.List[str] = _diff(candidate_tokens, reference_tokens)
@@ -250,9 +244,7 @@ def bag_of_tokens(
 
 
 def _diff(gt_tokens, cd_tokens) -> typing.List[str]:
-    return list(
-        (collections.Counter(gt_tokens) - collections.Counter(cd_tokens)).elements()
-    )
+    return list((collections.Counter(gt_tokens) - collections.Counter(cd_tokens)).elements())
 
 
 def ir_precision(reference_data, candidate_data) -> float:

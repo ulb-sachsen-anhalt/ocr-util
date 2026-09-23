@@ -4,9 +4,7 @@ from enum import Enum, IntEnum
 from typing import Dict, Final, List
 from xml.dom.minidom import Element
 
-PAGE_2013: Final[str] = (
-    "http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15"
-)
+PAGE_2013: Final[str] = "http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15"
 XML_NS: Final[Dict[str, str]] = {
     "alto": "http://www.loc.gov/standards/alto/ns-v3#",
     "pg2013": PAGE_2013,

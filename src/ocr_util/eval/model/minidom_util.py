@@ -8,9 +8,7 @@ class MinidomUtil:
     """Helper Methods for XML Manipulation"""
 
     @staticmethod
-    def remove_element_and_clear_parent(
-        element: Element, removable_tags=None
-    ) -> List[Element]:
+    def remove_element_and_clear_parent(element: Element, removable_tags=None) -> List[Element]:
         if removable_tags is None:
             removable_tags = []
         parent: Element = element.parentNode
@@ -28,9 +26,7 @@ class MinidomUtil:
                     if is_removable_tag:
                         removed_elements.append(sibling)
             if len(parent.childNodes) == 0:
-                removed_parent_elements = MinidomUtil.remove_element_and_clear_parent(
-                    parent, removable_tags
-                )
+                removed_parent_elements = MinidomUtil.remove_element_and_clear_parent(parent, removable_tags)
                 removed_elements.extend(removed_parent_elements)
         return removed_elements
 

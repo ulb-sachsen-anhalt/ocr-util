@@ -48,9 +48,7 @@ class Util:
         raise NoFreePortAvailableException
 
     @staticmethod
-    def find_api_port(
-        host: str, from_port: int, to_port: int, exclude_ports: List[int] = None
-    ) -> int:
+    def find_api_port(host: str, from_port: int, to_port: int, exclude_ports: List[int] = None) -> int:
         if exclude_ports is None:
             exclude_ports = []
         for port in range(from_port, to_port + 1):  # include to_port

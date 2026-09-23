@@ -34,10 +34,10 @@ def test_letter_preprocessor_reports_character_class_removals():
 
 
 # default reference
-THE_COMBINED_A_FOX = 'the á lazy brown fox jumps over the hump'
-THE_LAZY_FOX = 'the lazy brown fox jumps over the hump'
-THE_FOX_LAZY = 'the fox lazy brown jumps over the hump'
-THE_FOX_INPUT_IR = 'the hump lazy brown fox fox fox jumps'
+THE_COMBINED_A_FOX = "the á lazy brown fox jumps over the hump"
+THE_LAZY_FOX = "the lazy brown fox jumps over the hump"
+THE_FOX_LAZY = "the fox lazy brown jumps over the hump"
+THE_FOX_INPUT_IR = "the hump lazy brown fox fox fox jumps"
 
 
 def test_metric_unicode_normalization_happens():
@@ -47,7 +47,7 @@ def test_metric_unicode_normalization_happens():
     """
 
     # arrange
-    raw1 = 'the á lazy brown fox jumps over the hump'
+    raw1 = "the á lazy brown fox jumps over the hump"
     raw2 = THE_COMBINED_A_FOX
     prepr1 = dipre.TextPreprocessor(raw1)
     prepr1.code_norm = dipre.UC_NORMALIZATION_NFKD
@@ -122,7 +122,7 @@ def test_piece_to_dict_text_alto():
     ALTO format properly
     """
 
-    alto_path = Path(f'{TEST_RES_DIR}/dict_metric/alto.xml').absolute()
+    alto_path = Path(f"{TEST_RES_DIR}/dict_metric/alto.xml").absolute()
     no_sanit, _ = dipre.file_to_text(alto_path, oneliner=True)
     prep1 = dipre.DictionaryTextPreprocessor(alto_path)
 
@@ -141,7 +141,7 @@ def test_piece_to_dict_text_alto():
 def test_piece_to_dict_text_page2019():
     """Can process PAGE 2019 for dict text"""
 
-    page_path = Path(f'{TEST_RES_DIR}/dict_metric/page2019.xml').absolute()
+    page_path = Path(f"{TEST_RES_DIR}/dict_metric/page2019.xml").absolute()
     no_sanit, _ = dipre.file_to_text(page_path, oneliner=True)
     prep1 = dipre.DictionaryTextPreprocessor(page_path)
     prep1.code_norm = dipre.UC_NORMALIZATION_NFKD
@@ -161,7 +161,7 @@ def test_piece_to_dict_text_page2019():
 def test_piece_to_dict_text_page2013():
     """Can also process legacy transkribus PAGE 2013 for dict texts"""
 
-    page_path = Path(f'{TEST_RES_DIR}/dict_metric/page2013.xml').absolute()
+    page_path = Path(f"{TEST_RES_DIR}/dict_metric/page2013.xml").absolute()
     page_text_no_sanit, _ = dipre.file_to_text(page_path, oneliner=True)
 
     # act

@@ -24,6 +24,9 @@ ocr-util eval --help
 # corpus management
 ocr-util corpus --help
 
+# analyse an existing METS corpus
+ocr-util corpus-analyse --help
+
 # slice image by image + input OCR
 ocr-util slice --help
 
@@ -67,6 +70,38 @@ Behavior:
 * single filter value -> exact match (e.g. `ger` does not match `ger+eng`)
 * multi-value filter -> all filter values must be present in any order
 * entries missing the filter criterion are reported as WARNING and discarded
+* METS coverage reports how many evaluation pairs map to full-text references
+	and how many METS references have no evaluation pair
+* aggregation coverage reports how many evaluated pairs provide each dimension;
+	reported `items` count candidate/ground-truth pairs, not MODS elements
+
+### Corpus Analysis
+
+Existing METS corpora can be filtered without evaluation candidate data. Matching
+full-text file references are printed one per line:
+
+```bash
+ocr-util corpus-analyse <mets.xml> \
+	--filter-by "mods:dateIssued:century=16th"
+```
+
+Repeat `--filter-by` to combine criteria with AND:
+
+```bash
+ocr-util corpus-analyse <mets.xml> \
+	--filter-by "mods:dateIssued:century=16th" \
+	--filter-by "mods:language=ger"
+```
+
+Check that every local file referenced by any METS `FLocat` exists:
+
+```bash
+ocr-util corpus-analyse <mets.xml> --check
+```
+
+Relative paths are resolved from the METS directory. Missing files and remote
+references that cannot be checked locally produce a non-zero exit status. This
+is a file-presence check; it does not perform XML schema validation.
 
 ## Development
 

@@ -4,25 +4,24 @@ of digital assets in OCR ALTO format
 
 import os
 from pathlib import (
-	PurePath,
+    PurePath,
 )
 
 import pytest
 from shapely import (
-	Polygon,
+    Polygon,
 )
 
 from ocr_util.eval.model.digital_object_model import (
-	DigitalObjectTree,
+    DigitalObjectTree,
 )
 from ocr_util.eval.model.common import (
-	DigitalObjectLevel,
+    DigitalObjectLevel,
 )
 from ocr_util.eval.model.main import (
-	to_digital_object,
+    to_digital_object,
 )
 from tests.conftest import TEST_RES_DIR
-
 
 # @pytest.fixture(name="zd101")
 # def _fixture_zd101():
@@ -34,7 +33,7 @@ from tests.conftest import TEST_RES_DIR
 def test_to_children_altov3():
     """Ensure old ZD1 groundtruth in ALTO V3 can still be computed"""
 
-    ocr_path = os.path.join(TEST_RES_DIR, 'groundtruth/alto/1667522809_J_0073_0001_375x2050_2325x9550.xml')
+    ocr_path = os.path.join(TEST_RES_DIR, "groundtruth/alto/1667522809_J_0073_0001_375x2050_2325x9550.xml")
 
     # act
     page_piece = to_digital_object(ocr_path)
@@ -43,8 +42,8 @@ def test_to_children_altov3():
     # 10 regions
     assert len(page_piece.children) == 10
     # check region IDa
-    assert page_piece.children[0].id == 'block_27'
-    assert page_piece.children[1].id == 'block_28'
+    assert page_piece.children[0].id == "block_27"
+    assert page_piece.children[1].id == "block_28"
 
     # check region 2 has 2 lines
     assert len(page_piece.children[1].children) == 2
@@ -55,7 +54,7 @@ def test_to_children_altov3():
 
     # first line textual content
     line1_text = page_piece.children[0].children[0].transcription
-    assert line1_text == 'Neueſte Ereigniſſe.'
+    assert line1_text == "Neueſte Ereigniſſe."
     # first region has just one single line,
     # therefore both must match
     region1_text = page_piece.children[0].transcription
@@ -120,62 +119,61 @@ def test_to_children_altov3():
 def test_digital_object_file_path():
     """Ensure type of piece property"""
 
-    ocr_path: str = f'{TEST_RES_DIR}/groundtruth/alto/1667522809_J_0073_0001_375x2050_2325x9550.xml'
+    ocr_path: str = f"{TEST_RES_DIR}/groundtruth/alto/1667522809_J_0073_0001_375x2050_2325x9550.xml"
     page_piece: DigitalObjectTree = to_digital_object(ocr_path)
     assert isinstance(page_piece.file_path, PurePath)
 
 
 def test_digital_object_with_spatium():
     """Test ALTO format handling with SP (spatium/space) elements
-    
+
     Ensures that:
     - SP elements are correctly parsed between words
     - Word sequences are properly reconstructed with spaces
     - Spatium dimensions are handled correctly
     """
-    
+
     # arrange
-    ocr_path = os.path.join(TEST_RES_DIR, 'groundtruth/alto/1667522809_J_0073_0001_375x2050_2325x9550.xml')
-    
+    ocr_path = os.path.join(TEST_RES_DIR, "groundtruth/alto/1667522809_J_0073_0001_375x2050_2325x9550.xml")
+
     # act
     page_piece = to_digital_object(ocr_path)
-    
+
     # assert - check first text block with spatium
     region1 = page_piece.children[0]
     line1 = region1.children[0]
-    
+
     # verify we have 2 words in the first line
     assert len(line1.children) == 2
-    
+
     # verify the words
     word1 = line1.children[0]
     word2 = line1.children[1]
-    assert word1.transcription == 'Neueſte'
-    assert word2.transcription == 'Ereigniſſe.'
-    
+    assert word1.transcription == "Neueſte"
+    assert word2.transcription == "Ereigniſſe."
+
     # verify line transcription includes space between words
-    assert line1.transcription == 'Neueſte Ereigniſſe.'
-    
+    assert line1.transcription == "Neueſte Ereigniſſe."
+
     # check second text block with more spatium elements
     region2 = page_piece.children[1]
     line2 = region2.children[0]
-    
+
     # second line has 12 words with SP elements between them
     assert len(line2.children) == 12
-    
+
     # verify transcription is properly spaced
-    expected_text = 'In Berlin iſt es auch in der letzten Nacht wieder zu blutigen'
+    expected_text = "In Berlin iſt es auch in der letzten Nacht wieder zu blutigen"
     assert line2.transcription == expected_text
-    
+
     # verify each word exists independently
     words = [word.transcription for word in line2.children]
-    assert words == ['In', 'Berlin', 'iſt', 'es', 'auch', 'in', 
-                     'der', 'letzten', 'Nacht', 'wieder', 'zu', 'blutigen']
+    assert words == ["In", "Berlin", "iſt", "es", "auch", "in", "der", "letzten", "Nacht", "wieder", "zu", "blutigen"]
 
 
 def test_digital_object_urn_nbn_de_gbv_spatium():
     """Test ALTO format with urn+nbn+de+gbv+3+5-2064-fp00000404 resource
-    
+
     This tests:
     - SP elements without WIDTH attributes
     - Single TextBlock with single TextLine structure
@@ -183,61 +181,60 @@ def test_digital_object_urn_nbn_de_gbv_spatium():
     - English text content processing
     - Critical: String elements WITHOUT SP between them are concatenated
     """
-    
+
     # arrange
-    ocr_path = os.path.join(TEST_RES_DIR, 'groundtruth/alto/urn+nbn+de+gbv+3+5-2064-fp00000404.xml')
-    
+    ocr_path = os.path.join(TEST_RES_DIR, "groundtruth/alto/urn+nbn+de+gbv+3+5-2064-fp00000404.xml")
+
     # act
     page_piece = to_digital_object(ocr_path)
-    
+
     # assert - verify page structure
-    assert page_piece.id == 'p00000404'
+    assert page_piece.id == "p00000404"
     assert len(page_piece.dimensions) == 4
-    
+
     # page dimensions
     page_polygon = Polygon(page_piece.dimensions)
     assert page_polygon.bounds == (0.0, 0.0, 1910.0, 2841.0)
-    
+
     # single text block
     assert len(page_piece.children) == 1
     text_block = page_piece.children[0]
-    assert text_block.id == 'tb203008'
-    
+    assert text_block.id == "tb203008"
+
     # single text line
     assert len(text_block.children) == 1
     text_line = text_block.children[0]
-    assert text_line.id == 'tl2'
-    
+    assert text_line.id == "tl2"
+
     # 10 words-like tokens in the line
     # String elements without SP between them are concatenated:
     # - "(" + "Sand" -> "(Sand" (no SP between them in XML)
     # - "Gate" + ")" + "," -> "Gate)," (no SP between them in XML)
     assert len(text_line.children) == 10
-    
+
     # verify complete transcription with proper spacing
     # SP elements control where spaces appear
-    expected_text = 'themselves in the Kum Kapu (Sand Gate), a district on'
+    expected_text = "themselves in the Kum Kapu (Sand Gate), a district on"
     assert text_line.transcription == expected_text
-    
+
     # verify individual words
     words = [word.transcription for word in text_line.children]
-    assert words == ['themselves', 'in', 'the', 'Kum', 'Kapu',
-                     '(Sand', 'Gate),', 'a', 'district', 'on']
-    
+    assert words == ["themselves", "in", "the", "Kum", "Kapu", "(Sand", "Gate),", "a", "district", "on"]
+
     # verify text block and page transcriptions match line
     assert text_block.transcription == expected_text
     assert page_piece.transcription == expected_text
-    
+
     # verify line dimensions
     assert text_line.dimensions == [[463, 492], [1583, 492], [1583, 532], [463, 532]]
 
 
 def test_warns_for_multiple_alto_pages(tmp_path, capsys):
-        """Warn and continue when ALTO contains multiple Page elements."""
+    """Warn and continue when ALTO contains multiple Page elements."""
 
-        alto_path = tmp_path / "multi_page_alto.xml"
-        alto_path.write_text(
-                """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+    alto_path = tmp_path / "multi_page_alto.xml"
+    alto_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <alto>
     <Layout>
         <Page ID=\"p1\" WIDTH=\"100\" HEIGHT=\"100\">
@@ -261,14 +258,12 @@ def test_warns_for_multiple_alto_pages(tmp_path, capsys):
     </Layout>
 </alto>
 """,
-                encoding="utf-8",
-        )
+        encoding="utf-8",
+    )
 
-        page_piece = to_digital_object(str(alto_path))
-        out = capsys.readouterr().out
+    page_piece = to_digital_object(str(alto_path))
+    out = capsys.readouterr().out
 
-        assert "contains 2 Page elements" in out
-        assert "using first page only" in out
-        assert page_piece.id == "p1"
-
-
+    assert "contains 2 Page elements" in out
+    assert "using first page only" in out
+    assert page_piece.id == "p1"

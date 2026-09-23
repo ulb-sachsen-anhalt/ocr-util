@@ -22,9 +22,7 @@ class FormatAltoV3Util:
         if len(pages) < 1:
             raise RuntimeError(f"Empty ALTO {doc_root} - no pages!")
         if len(pages) > 1:
-            print(
-                f"[WARN ] ALTO '{path}' contains {len(pages)} Page elements; using first page only."
-            )
+            print(f"[WARN ] ALTO '{path}' contains {len(pages)} Page elements; using first page only.")
         page_one: Element = pages[0]
         _page_width = int(page_one.getAttribute("WIDTH"))
         _page_height = int(page_one.getAttribute("HEIGHT"))
@@ -56,15 +54,11 @@ class FormatAltoV3Util:
                 )
                 comp_digo.level = DigitalObjectLevel.REGION
                 comp_digo.parent = top_digo
-                comp_digo.dimensions = FormatAltoV3Util.__extract_dimensions(
-                    _comp_block
-                )
+                comp_digo.dimensions = FormatAltoV3Util.__extract_dimensions(_comp_block)
                 text_blocks = _comp_block.getElementsByTagName("TextBlock")
                 if len(text_blocks) < 1:
                     raise RuntimeError(f"Empty ALTO {doc_root} - no blocks!")
-                comp_digo.children = FormatAltoV3Util.__read_blocks(
-                    text_blocks, comp_digo
-                )
+                comp_digo.children = FormatAltoV3Util.__read_blocks(text_blocks, comp_digo)
                 _block_digos.append(comp_digo)
         else:
             text_blocks = doc_root.getElementsByTagName("TextBlock")
@@ -86,9 +80,7 @@ class FormatAltoV3Util:
             a_block.level = DigitalObjectLevel.REGION
             block_lines = block_el.getElementsByTagName("TextLine")
             if len(block_lines) == 0:
-                print(
-                    f"[WARN ] TextBlock@ID={a_block.id} contains no lines - empty page {parent.id}?"
-                )
+                print(f"[WARN ] TextBlock@ID={a_block.id} contains no lines - empty page {parent.id}?")
                 a_block.children = []
                 continue
             a_block.parent = parent
@@ -108,11 +100,7 @@ class FormatAltoV3Util:
                 _subject = label
             # new alto way
             else:
-                gt_els = [
-                    e
-                    for e in gt_type_el
-                    if e.getAttribute("ID") == "ulb_groundtruth_type"
-                ]
+                gt_els = [e for e in gt_type_el if e.getAttribute("ID") == "ulb_groundtruth_type"]
                 if len(gt_els) == 1:
                     value = gt_els[0].getAttribute("VALUE")
                     if value:
@@ -124,9 +112,7 @@ class FormatAltoV3Util:
         _lines = []
         for _text_line in the_lines:
             _id = _text_line.getAttribute("ID")
-            line = DigitalObjectTree(
-                _id, _text_line, file_format=DigitalObjectTreeOCRFileFormat.ALTO_V3
-            )
+            line = DigitalObjectTree(_id, _text_line, file_format=DigitalObjectTreeOCRFileFormat.ALTO_V3)
             line.level = DigitalObjectLevel.LINE
             text_strings = _text_line.getElementsByTagName("String")
             if len(text_strings) < 1:
@@ -154,10 +140,7 @@ class FormatAltoV3Util:
         child_nodes = line_element.childNodes
 
         # Check if any SP elements are present in this line
-        has_sp_elements = any(
-            node.nodeType == node.ELEMENT_NODE and node.tagName == "SP"
-            for node in child_nodes
-        )
+        has_sp_elements = any(node.nodeType == node.ELEMENT_NODE and node.tagName == "SP" for node in child_nodes)
 
         if not has_sp_elements:
             # Fallback: No SP elements present, treat each String as a separate word
@@ -205,9 +188,7 @@ class FormatAltoV3Util:
                         )
                         word.level = DigitalObjectLevel.WORD
                         word.transcription = accumulated_content
-                        word.dimensions = FormatAltoV3Util.__extract_dimensions(
-                            accumulated_element
-                        )
+                        word.dimensions = FormatAltoV3Util.__extract_dimensions(accumulated_element)
                         word.parent = parent
                         word_tokens.append(word)
 
@@ -224,9 +205,7 @@ class FormatAltoV3Util:
                 )
                 word.level = DigitalObjectLevel.WORD
                 word.transcription = accumulated_content
-                word.dimensions = FormatAltoV3Util.__extract_dimensions(
-                    accumulated_element
-                )
+                word.dimensions = FormatAltoV3Util.__extract_dimensions(accumulated_element)
                 word.parent = parent
                 word_tokens.append(word)
 
