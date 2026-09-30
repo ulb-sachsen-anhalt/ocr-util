@@ -3,9 +3,8 @@
 
 import argparse
 import logging
-import os
 import re
-from pathlib import Path, PurePath
+from pathlib import PurePath
 
 import ocr_util
 import ocr_util.eval.model as do
@@ -13,18 +12,10 @@ import ocr_util.eval.model.filter as dofi
 import ocr_util.eval.cli as eval_cli
 import ocr_util.slice.cli as slice_cli
 import ocr_util.show.cli as show_cli
-import ocr_util.corpus.analyse as corpus_analyse
-import ocr_util.corpus.generate_corpus as gc
-
-from ocr_util.corpus.common import CorpusArgs
 
 # script constants
 DEFAULT_VERBOSITY = 0
 SUB_CMD_FRAME = "frame"
-SUB_CMD_GROUNDTRUTH_CORPUS = "corpus"
-SUB_CMD_CORPUS_ANALYSE = "corpus-analyse"
-CORPUS_CACHE_DIR_NAME = "ocr_util_corpus_mets_cache"
-CORPUS_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", CORPUS_CACHE_DIR_NAME)
 
 SUB_CMD_EVALUATE = "eval"
 SUB_CMD_SLICE = "slice"
@@ -88,77 +79,6 @@ def start() -> None:
         f.e.: --frame "2892,2480 5072,2480 5072,5148 2892,5148"
         """,
     )
-
-    # groundtruth-corpus subcommand
-    groundtruth_corpus_arg_parser = sub_arg_parsers.add_parser(
-        SUB_CMD_GROUNDTRUTH_CORPUS,
-        help="Create METS file from N ground truth PAGE-XML files with URN identifiers",
-    )
-    groundtruth_corpus_arg_parser.add_argument(
-        "-i",
-        "--input",
-        dest="input_dir",
-        help="Path to the input directory containing GT PAGE-XML files",
-        required=True,
-    )
-    groundtruth_corpus_arg_parser.add_argument(
-        "-o",
-        "--output",
-        dest="output_dir",
-        help="Path to the output directory for generated corpus",
-        required=True,
-    )
-    groundtruth_corpus_arg_parser.add_argument(
-        "-l",
-        "--limit",
-        type=int,
-        default=0,
-        help="Number of files to process (default: 0 = unlimited)",
-        required=False,
-    )
-    groundtruth_corpus_arg_parser.add_argument(
-        "-t",
-        "--temp-dir",
-        dest="temp_dir",
-        default=CORPUS_CACHE_DIR,
-        help=f"Path to temporary directory for caching METS files (default: {CORPUS_CACHE_DIR})",
-        required=False,
-    )
-    groundtruth_corpus_arg_parser.add_argument(
-        "-v",
-        "--verbosity",
-        action="count",
-        default=DEFAULT_VERBOSITY,
-        required=False,
-        help=f"Verbosity flag. To increase, append multiple 'v's (optional; default: '{DEFAULT_VERBOSITY}')",
-    )
-    groundtruth_corpus_arg_parser.add_argument(
-        "--corpus-label",
-        dest="corpus_label",
-        default="Ground Truth Corpus",
-        help="Label for the corpus in the METS logical structure (default: 'Ground Truth Corpus')",
-        required=False,
-    )
-    groundtruth_corpus_arg_parser.add_argument(
-        "--oai-base-url",
-        dest="oai_base_url",
-        help="Base URL for OAI-PMH requests",
-        required=False,
-    )
-    groundtruth_corpus_arg_parser.add_argument(
-        "--clear-cache",
-        dest="clear_cache",
-        action="store_true",
-        default=False,
-        help="Clear the local cache directory before processing (default: False)",
-        required=False,
-    )
-
-    corpus_analyse_parser = sub_arg_parsers.add_parser(
-        SUB_CMD_CORPUS_ANALYSE,
-        help="List files in an existing METS corpus that match metadata filters",
-    )
-    corpus_analyse.register_arguments(corpus_analyse_parser)
 
     # evaluate subcommand
     evaluate_arg_parser = sub_arg_parsers.add_parser(
@@ -275,25 +195,6 @@ def start() -> None:
         file_result: PurePath = do.from_digital_object(piece_result, output_ocr_file)
         if verbosity > 0:
             print("[INFO ] file_result", file_result)
-
-    elif args.subcommand == SUB_CMD_GROUNDTRUTH_CORPUS:
-        corpus_args = CorpusArgs(
-            input_dir=Path(args.input_dir).absolute(),
-            output_dir=Path(args.output_dir).absolute(),
-            local_cache_dir=Path(args.temp_dir).absolute(),
-            oai_base_url=args.oai_base_url,
-            limit=int(args.limit),
-            corpus_label=args.corpus_label,
-            clear_cache=args.clear_cache,
-        )
-        gc.generate(corpus_args)
-
-    elif args.subcommand == SUB_CMD_CORPUS_ANALYSE:
-        analyse_args = vars(args)
-        analyse_args.pop("subcommand", None)
-        result = corpus_analyse.start_analysis(analyse_args)
-        if isinstance(result, corpus_analyse.CorpusCheckResult) and not result.is_valid:
-            raise SystemExit(1)
 
     elif args.subcommand == SUB_CMD_EVALUATE:
         eval_args = vars(args)

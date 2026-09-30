@@ -41,6 +41,7 @@ Homepage = "https://github.com/ulb-sachsen-anhalt/ocr-util"
 
 [project.scripts]
 ocr-util = "ocr_util.cli:start"
+ocr-corpus = "ocr_corpus.cli:start"
 
 [build-system]
 requires = ["setuptools>=61.0.0", "wheel"]
@@ -53,7 +54,7 @@ version = {attr = "ocr_util.__version__"}
 where = ["src"]
 
 [tool.setuptools.package-data]
-ocr_util = ["corpus/*.xml"]
+ocr_corpus = ["*.xml"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
