@@ -41,11 +41,15 @@ DEFAULT_LIMIT = 0
 logger = logging.getLogger(__name__)
 
 
-def fetch_resources(cache_path: pathlib.Path, gt_files: list[cc.CorpusPageInput]) -> list[cc.CorpusPageInput]:
+def fetch_resources(
+    cache_path: pathlib.Path,
+    gt_files: list[cc.CorpusPageInput],
+    oai_base_url: typing.Optional[str] = None,
+) -> list[cc.CorpusPageInput]:
     """Fetch required METS metadata parallel for given inputs."""
     if not cache_path.exists():
         cache_path.mkdir()
-    resolver: lr.RecordMetadataResolver = lr.RecordMetadataResolver()
+    resolver: lr.RecordMetadataResolver = lr.RecordMetadataResolver(oai_base_url=oai_base_url)
     # Use ThreadPoolExecutor directly for parallel execution
     with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
         futures = [executor.submit(resolver.fetch, an_input, cache_path=cache_path) for an_input in gt_files]
@@ -116,7 +120,7 @@ def generate(cargs: cc.CorpusArgs) -> cc.CorpusGeneratorResult:
     )
     corpus_inputs = [cc.CorpusPageInput(groundtruth_file=gt_file) for gt_file in gt_files]
     local_cache_path = Path(f"{cargs.local_cache_dir}").joinpath("mets")
-    corpus_input_with_resources = fetch_resources(local_cache_path, corpus_inputs)
+    corpus_input_with_resources = fetch_resources(local_cache_path, corpus_inputs, oai_base_url=cargs.oai_base_url)
     corpus_file = Corpus(cargs, corpus_input_with_resources)
     return corpus_file.build()
 

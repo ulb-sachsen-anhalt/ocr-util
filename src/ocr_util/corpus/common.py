@@ -79,6 +79,7 @@ class CorpusArgs:
     limit: int = 0
     clear_cache: bool = False
     corpus_label: str = "Ground Truth Corpus"
+    oai_base_url: typing.Optional[str] = None
 
 
 @dataclasses.dataclass

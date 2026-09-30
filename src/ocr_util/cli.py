@@ -281,6 +281,7 @@ def start() -> None:
             input_dir=Path(args.input_dir).absolute(),
             output_dir=Path(args.output_dir).absolute(),
             local_cache_dir=Path(args.temp_dir).absolute(),
+            oai_base_url=args.oai_base_url,
             limit=int(args.limit),
             corpus_label=args.corpus_label,
             clear_cache=args.clear_cache,

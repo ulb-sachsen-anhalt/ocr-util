@@ -401,6 +401,29 @@ def test_cli_groundtruth_corpus_with_custom_temp_dir(mock_generate, mock_gt_file
 
 
 @unittest.mock.patch("ocr_util.cli.gc.generate")
+def test_cli_groundtruth_corpus_with_custom_oai_base_url(mock_generate, mock_gt_files, mock_output_dir):
+    custom_oai_base_url = "https://example.org/oai"
+
+    with unittest.mock.patch(
+        "sys.argv",
+        [
+            "ocr-util",
+            "corpus",
+            "-i",
+            str(mock_gt_files),
+            "-o",
+            str(mock_output_dir),
+            "--oai-base-url",
+            custom_oai_base_url,
+        ],
+    ):
+        ou_cli.start()
+
+    call_args = mock_generate.call_args[0][0]
+    assert call_args.oai_base_url == custom_oai_base_url
+
+
+@unittest.mock.patch("ocr_util.cli.gc.generate")
 def test_cli_groundtruth_corpus_exception_handling(mock_generate, mock_gt_files, mock_output_dir, capsys):
     """Test CLI exception handling when corpus generation fails."""
     # arrange
