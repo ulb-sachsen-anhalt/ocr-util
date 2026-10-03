@@ -445,16 +445,16 @@ def test_filter_value_matches_exact_single_value():
     """Single-value filters require exact value match."""
 
     assert dig._filter_value_matches("ger", "ger") is True
-    assert dig._filter_value_matches("ger+eng", "ger") is False
-    assert dig._filter_value_matches("eng", "ger") is False
+    assert dig._filter_value_matches("ger+fre", "ger") is False
+    assert dig._filter_value_matches("fre", "ger") is False
 
 
 def test_filter_value_matches_set_containment_for_multi_value():
     """Multi-value filter requires expected value-set to be contained in extracted set."""
 
-    assert dig._filter_value_matches("eng+ger", "ger+eng") is True
-    assert dig._filter_value_matches("eng+ger+lat", "ger+eng") is True
-    assert dig._filter_value_matches("ger", "ger+eng") is False
+    assert dig._filter_value_matches("fre+ger", "ger+fre") is True
+    assert dig._filter_value_matches("fre+ger+lat", "ger+fre") is True
+    assert dig._filter_value_matches("ger", "ger+fre") is False
 
 
 def test_apply_entry_filter_warns_and_discards_missing_metadata(capsys):
@@ -464,7 +464,7 @@ def test_apply_entry_filter_warns_and_discards_missing_metadata(capsys):
     entry_ok.tags["lang"] = "ger"
 
     entry_wrong = dig.digev.EvalEntry(Path("wrong.xml"))
-    entry_wrong.tags["lang"] = "eng"
+    entry_wrong.tags["lang"] = "fre"
 
     entry_missing = dig.digev.EvalEntry(Path("missing.xml"))
 
@@ -563,7 +563,7 @@ def test_cli_filter_by_multilanguage_set_containment_end_to_end(tmp_path):
     shutil.copy(src_candidates / cand_b, candidate_dir / cand_b)
     shutil.copy(src_reference / gt_b, reference_dir / gt_b)
 
-    # Entry A has two languages (ger+eng) and 19th century publication.
+    # Entry A has two languages (ger+fre) and 19th century publication.
     # Entry B has only one language (ger) and 20th century publication.
     mets_file = tmp_path / "reference" / "test_mets_multilang.xml"
     mets_file.write_text(
@@ -574,7 +574,7 @@ def test_cli_filter_by_multilanguage_set_containment_end_to_end(tmp_path):
     <mets:dmdSec ID=\"md_multi\">
         <mets:mdWrap MDTYPE=\"MODS\"><mets:xmlData><mods:mods>
             <mods:language><mods:languageTerm type=\"code\">ger</mods:languageTerm></mods:language>
-            <mods:language><mods:languageTerm type=\"code\">eng</mods:languageTerm></mods:language>
+            <mods:language><mods:languageTerm type=\"code\">fre</mods:languageTerm></mods:language>
             <mods:originInfo><mods:dateIssued>1867</mods:dateIssued></mods:originInfo>
         </mods:mods></mets:xmlData></mets:mdWrap>
     </mets:dmdSec>
@@ -603,7 +603,7 @@ def test_cli_filter_by_multilanguage_set_containment_end_to_end(tmp_path):
         "utf8": dig.DEFAULT_UTF8_NORM,
         "sequential": True,
         "mets_file": str(mets_file),
-        "filter_by": "mods:language=ger+eng",
+        "filter_by": "mods:language=ger+fre",
         "aggregate_by": "mods:dateIssued:century",
     }
 
@@ -613,3 +613,77 @@ def test_cli_filter_by_multilanguage_set_containment_end_to_end(tmp_path):
     keys = [r.eval_key for r in results]
     assert all("mods_dateIssued_century:19th" in key for key in keys)
     assert all("20th" not in key for key in keys)
+
+
+@pytest.mark.parametrize(
+    "filter_by, years",
+    [
+        ("mods:dateIssued:century=18th", ("1700", "1701", "1750", "1800", "1801")),
+        ("mods:dateIssued:decade=1800s", ("1799", "1800", "1805", "1809", "1810")),
+    ],
+    ids=["calendar-century-then-language", "decade-then-language"],
+)
+def test_cli_filter_by_date_bucket_then_aggregate_by_language(tmp_path, filter_by, years):
+    """Include both bucket endpoints, exclude neighboring years, and aggregate retained languages."""
+    etree = pytest.importorskip("lxml.etree", reason="lxml required for METS/MODS extraction")
+
+    candidate_dir = tmp_path / "candidate" / _DOMAIN_LABEL
+    reference_dir = tmp_path / "reference" / _DOMAIN_LABEL
+    candidate_dir.mkdir(parents=True)
+    reference_dir.mkdir(parents=True)
+
+    source_candidate = TEST_RES_DIR / "candidate" / "frk_alto" / "1667522809_J_0001_0002.xml"
+    source_reference = TEST_RES_DIR / "groundtruth" / "page" / "1667522809_J_0001_0002.art.gt.xml"
+    namespaces = dig.digev.METSModsExtractor.DEFAULT_NAMESPACES
+    mets_namespace = namespaces["mets"]
+    mods_namespace = namespaces["mods"]
+    xlink_namespace = namespaces["xlink"]
+    mets = etree.Element(f"{{{mets_namespace}}}mets", nsmap=namespaces)
+    file_section = etree.Element(f"{{{mets_namespace}}}fileSec")
+    file_group = etree.SubElement(file_section, f"{{{mets_namespace}}}fileGrp", USE="FULLTEXT")
+
+    for index, (year, language) in enumerate(zip(years, ("lat", "ger", "fre", "ger", "lat"))):
+        candidate_name = f"entry_{index}.xml"
+        reference_name = f"entry_{index}.art.gt.xml"
+        shutil.copy(source_candidate, candidate_dir / candidate_name)
+        shutil.copy(source_reference, reference_dir / reference_name)
+
+        metadata_id = f"md_{index}"
+        metadata_section = etree.SubElement(mets, f"{{{mets_namespace}}}dmdSec", ID=metadata_id)
+        metadata_wrap = etree.SubElement(metadata_section, f"{{{mets_namespace}}}mdWrap", MDTYPE="MODS")
+        xml_data = etree.SubElement(metadata_wrap, f"{{{mets_namespace}}}xmlData")
+        mods = etree.SubElement(xml_data, f"{{{mods_namespace}}}mods")
+        language_element = etree.SubElement(mods, f"{{{mods_namespace}}}language")
+        etree.SubElement(language_element, f"{{{mods_namespace}}}languageTerm", type="code").text = language
+        origin = etree.SubElement(mods, f"{{{mods_namespace}}}originInfo")
+        etree.SubElement(origin, f"{{{mods_namespace}}}dateIssued").text = year
+        file_element = etree.SubElement(file_group, f"{{{mets_namespace}}}file", ID=f"F{index}", DMDID=metadata_id)
+        etree.SubElement(
+            file_element,
+            f"{{{mets_namespace}}}FLocat",
+            {f"{{{xlink_namespace}}}href": reference_name},
+        )
+
+    mets.append(file_section)
+    mets_file = tmp_path / "reference" / "test_mets_date_buckets.xml"
+    etree.ElementTree(mets).write(str(mets_file), encoding="UTF-8", xml_declaration=True)
+
+    results = dig.start_evaluation(
+        {
+            "candidates": candidate_dir,
+            "reference": reference_dir,
+            "metrics": "Cs",
+            "verbosity": 0,
+            "utf8": dig.DEFAULT_UTF8_NORM,
+            "sequential": True,
+            "mets_file": str(mets_file),
+            "filter_by": filter_by,
+            "aggregate_by": "mods:language",
+        }
+    )
+
+    assert len(results) == 2
+    assert {result.eval_key: result.n_total for result in results} == {
+        "Cs@mods_language:ger": 2,
+        "Cs@mods_language:fre": 1,
+    }

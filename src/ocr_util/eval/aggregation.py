@@ -142,10 +142,10 @@ def decade_transform(value: str) -> typing.Optional[str]:
 
 
 def century_transform(value: str) -> typing.Optional[str]:
-    """Transform a 4-digit year string into its century bucket (e.g. '1867' → '19th')."""
+    """Bucket years by calendar century: 1801 through 1900 belong to the 19th."""
     try:
         year = int(str(value).strip()[:4])
-        century = year // 100 + 1
+        century = (year - 1) // 100 + 1
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(century % 10 if century % 100 not in (11, 12, 13) else 0, "th")
         return f"{century}{suffix}"
     except (ValueError, TypeError):

@@ -49,6 +49,22 @@ ocr-util eval <candidates> \
 	--aggregate-by "mods:dateIssued:century"
 ```
 
+The dimensions can also be reversed: filter by publication century or decade,
+then aggregate by language. For example, keep only publications from the 17th
+century (1601-1700 inclusive), then group their evaluation results by MODS language:
+
+```bash
+ocr-util eval <candidates> \
+	--reference <groundtruth> \
+	--mets-file <mets.xml> \
+	--filter-by "mods:dateIssued:century=17th" \
+	--aggregate-by "mods:language"
+```
+
+Filtering still happens before evaluation and aggregation; only the metadata
+dimensions exchange roles. To select a decade instead, replace the filter above
+with `--filter-by "mods:dateIssued:decade=1800s"` (1800-1809 inclusive).
+
 Multi-language filter values are interpreted as sets:
 
 ```bash
@@ -60,6 +76,8 @@ ocr-util eval <candidates> \
 ```
 
 Behavior:
+* centuries follow calendar numbering: the 18th century is 1701-1800,
+	and the 19th century is 1801-1900; decades retain ten-year buckets such as 1800-1809
 * single filter value -> exact match (e.g. `ger` does not match `ger+eng`)
 * multi-value filter -> all filter values must be present in any order
 * entries missing the filter criterion are reported as WARNING and discarded

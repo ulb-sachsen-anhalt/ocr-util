@@ -697,9 +697,25 @@ def test_century_transform_21st():
     assert digev.century_transform("2026") == "21st"
 
 
-def test_century_transform_boundary_1900():
-    """1900 is in the 20th century."""
-    assert digev.century_transform("1900") == "20th"
+@pytest.mark.parametrize(
+    "year, expected",
+    [
+        ("0001", "1st"),
+        ("0100", "1st"),
+        ("0101", "2nd"),
+        ("1700", "17th"),
+        ("1701", "18th"),
+        ("1800", "18th"),
+        ("1801", "19th"),
+        ("1900", "19th"),
+        ("1901", "20th"),
+        ("2000", "20th"),
+        ("2001", "21st"),
+    ],
+)
+def test_century_transform_calendar_boundaries(year, expected):
+    """Calendar centuries start in year xx01 and end in xx00, not xx00 through xx99."""
+    assert digev.century_transform(year) == expected
 
 
 def test_century_transform_11th_century_no_spurious_st():
