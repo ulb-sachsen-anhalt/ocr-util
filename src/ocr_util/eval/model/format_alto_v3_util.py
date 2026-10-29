@@ -81,10 +81,13 @@ class FormatAltoV3Util:
             block_lines = block_el.getElementsByTagName("TextLine")
             if len(block_lines) == 0:
                 print(f"[WARN ] TextBlock@ID={a_block.id} contains no lines - empty page {parent.id}?")
-                a_block.children = []
                 continue
             a_block.parent = parent
             a_block.children = FormatAltoV3Util.__read_lines(block_lines, a_block)
+            # Discard region if all lines were empty and skipped
+            if not a_block.children:
+                print(f"[WARN ] TextBlock@ID={a_block.id} has no valid lines - discarding region")
+                continue
             a_block.dimensions = FormatAltoV3Util.__extract_dimensions(block_el)
             blocks.append(a_block)
         return blocks
@@ -116,7 +119,8 @@ class FormatAltoV3Util:
             line.level = DigitalObjectLevel.LINE
             text_strings = _text_line.getElementsByTagName("String")
             if len(text_strings) < 1:
-                raise RuntimeError(f"No words in line {_id}!")
+                print(f"[WARN ] Empty TextLine (no words): {_id}")
+                continue
             line.children = FormatAltoV3Util.__read_words(text_strings, line)
             line.parent = parent
             line.dimensions = FormatAltoV3Util.__extract_dimensions(_text_line)

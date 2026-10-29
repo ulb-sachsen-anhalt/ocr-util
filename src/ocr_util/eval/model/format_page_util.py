@@ -61,8 +61,13 @@ class FormatPageUtil:
             page_lines = region.getElementsByTagNameNS(ns, "TextLine")
             if len(page_lines) > 0:
                 this_piece.children = FormatPageUtil.__read_lines(page_lines, this_piece, ns)
-            this_piece.parent = top_piece
-            region_pieces.append(this_piece)
+            # Discard region if it has no valid children (all lines were empty)
+            if this_piece.children:
+                this_piece.parent = top_piece
+                region_pieces.append(this_piece)
+            elif len(page_lines) > 0:
+                # Had lines but all were empty/skipped
+                print(f"[WARN ] TextRegion@ID={this_piece.id} has no valid lines - discarding region")
         top_piece.children = region_pieces
         _all_points = [point for reg in region_pieces for point in reg.dimensions]
         top_piece.dimensions = _all_points
@@ -85,7 +90,8 @@ class FormatPageUtil:
                     try:
                         word_pieces = [FormatPageUtil.__from_text_element(el, line_piece, ns) for el in word_tokens]
                         if not word_pieces:
-                            raise RuntimeError(f"No words in line {line_piece.id}!")
+                            print(f"[WARN ] Empty TextLine (no words): {line_piece.id}")
+                            continue
                         # remove line content in favour of words content
                         line_piece.transcriptions = []
                         line_piece.children = word_pieces
