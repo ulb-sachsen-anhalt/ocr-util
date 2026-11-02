@@ -5,7 +5,7 @@ import argparse
 import os
 import typing
 
-from ocr_util.show.ocr_show_segmentation import _convert, _visualize
+from ocr_util.show.ocr_show_segmentation import convert, visualize
 
 
 def register_arguments(subparsers: argparse._SubParsersAction) -> argparse.ArgumentParser:
@@ -47,6 +47,13 @@ def register_arguments(subparsers: argparse._SubParsersAction) -> argparse.Argum
         default=False,
         help="render polygon ID labels on output image (default: False)",
     )
+    show_parser.add_argument(
+        "--show-transcription",
+        required=False,
+        action="store_true",
+        default=False,
+        help="render OCR transcriptions on output image (default: False)",
+    )
     show_parser.add_argument("-v", "--verbose", required=False, action="store_true", help="output info")
     return show_parser
 
@@ -59,14 +66,21 @@ def start_show(parse_args: typing.Dict):
     verbose = parse_args.get("verbose", False)
     img_format = parse_args.get("format", "jpg")
     show_labels = parse_args.get("show_labels", False)
+    show_transcription = parse_args.get("show_transcription", False)
 
     if verbose:
         print(f"[INFO] call with args {parse_args}")
         print(f"[INFO] output directory: {output_dir}")
 
     if os.path.exists(path_img) and os.path.exists(path_ocr):
-        converted_tmp = _convert(path_img, output_dir)
-        final_output = _visualize(converted_tmp, path_ocr, img_format=img_format, show_labels=show_labels)
+        converted_tmp = convert(path_img, output_dir)
+        final_output = visualize(
+            converted_tmp,
+            path_ocr,
+            img_format=img_format,
+            show_labels=show_labels,
+            show_transcription=show_transcription,
+        )
         print(f"[INFO] visualization complete. Final output: {final_output}")
     else:
         print(f"[ERROR] {path_img} or {path_ocr} not existing!")
